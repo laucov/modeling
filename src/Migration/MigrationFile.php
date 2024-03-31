@@ -34,6 +34,11 @@ namespace Laucov\Modeling\Migration;
 class MigrationFile
 {
     /**
+     * Migration class name.
+     */
+    public readonly string $className;
+
+    /**
      * Migration date.
      */
     public readonly \DateTimeImmutable $date;
@@ -82,12 +87,20 @@ class MigrationFile
 
         // Set name.
         $this->name = explode('.', substr($basename, $split_at + 1))[0];
+
+        // Set class name.
+        $class_name = $this->findClassName();
+        if ($class_name === null) {
+            $message = "No class declaration found in {$filename}.";
+            throw new \RuntimeException($message);
+        }
+        $this->className = $class_name;
     }
 
     /**
      * Get the migration actual class name.
      */
-    public function getClassName(): null|string
+    protected function findClassName(): null|string
     {
         // Get tokens.
         $tokens = token_get_all(file_get_contents($this->filename));

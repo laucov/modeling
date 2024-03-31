@@ -101,13 +101,4 @@ class MigrationRepository
 
         return $files;
     }
-
-    /**
-     * Set the default migration file date format in use.
-     */
-    public function setDefaultDateFormat(string $format): static
-    {
-        $this->defaultDateFormat = $format;
-        return $this;
-    }
 }

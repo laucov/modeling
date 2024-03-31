@@ -40,7 +40,7 @@ class MigrationFileTest extends TestCase
 {
     /**
      * @covers ::__construct
-     * @covers ::getClassName
+     * @covers ::findClassName
      */
     public function testCanCreateFromFilename(): void
     {
@@ -57,12 +57,19 @@ class MigrationFileTest extends TestCase
 
         // Get real class name.
         $class_name = 'Tests\Unit\Migration\CreateFlightsTable';
-        $this->assertSame($class_name, $migration->getClassName());
+        $this->assertSame($class_name, $migration->className);
+    }
 
-        // Create migration with no class (invalid).
+    /**
+     * @covers ::__construct
+     * @covers ::findClassName
+     */
+    public function testFileMustDeclareAClass(): void
+    {
+        $directory = __DIR__ . '/migration-files';
         $filename = "{$directory}/2023-03-31-125100-InvalidMigration.php";
-        $migration = new MigrationFile($filename, 'Y-m-d-His');
-        $this->assertNull($migration->getClassName());
+        $this->expectException(\RuntimeException::class);
+        new MigrationFile($filename, 'Y-m-d-His');
     }
 
     /**

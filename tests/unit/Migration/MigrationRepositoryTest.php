@@ -42,12 +42,11 @@ class MigrationRepositoryTest extends TestCase
      * @covers ::__construct
      * @covers ::addDirectory
      * @covers ::addFile
-     * @covers ::getClassName
      * @covers ::listFiles
-     * @covers ::setDefaultDateFormat
      * @uses Laucov\Modeling\Migration\MigrationFile::__construct
+     * @uses Laucov\Modeling\Migration\MigrationFile::findClassName
      */
-    public function testCanScanDirectories(): void
+    public function testCanSetFiles(): void
     {
         // Create repository.
         $repo = new MigrationRepository('Y-m-d-His');
@@ -112,7 +111,7 @@ class MigrationRepositoryTest extends TestCase
             $this->assertSame($v[0], $file->filename);
             $this->assertSame($v[1], $file->name);
             $this->assertSame($v[2], $file->date->format('d/m/Y H:i:s'));
-            $this->assertSame($v[3], $file->getClassName());
+            $this->assertSame($v[3], $file->className);
         }
     }
 }
