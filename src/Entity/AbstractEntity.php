@@ -1,7 +1,7 @@
 <?php
 
 /**
- * This file is part of Laucov's Web Framework project.
+ * This file is part of Laucov's Modeling Library project.
  * 
  * Copyright 2024 Laucov Serviços de Tecnologia da Informação Ltda.
  *
@@ -17,7 +17,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * 
- * @package web-framework
+ * @package modeling
  * 
  * @author Rafael Covaleski Pereira <rafael.covaleski@laucov.com>
  * 
