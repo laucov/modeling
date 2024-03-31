@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e7b370c4968cc9400c180ff61337b4d4",
+    "content-hash": "d94bc58acf2b83103e292426ad96dde0",
     "packages": [
         {
             "name": "laucov/db",
@@ -46,6 +46,47 @@
                 "source": "https://github.com/laucov/db/tree/v1.1.1"
             },
             "time": "2024-02-16T21:09:04+00:00"
+        },
+        {
+            "name": "laucov/validation",
+            "version": "v0.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laucov/validation.git",
+                "reference": "e3b2a34622285bc0129dac4acaefae41e66ff803"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/laucov/validation/zipball/e3b2a34622285bc0129dac4acaefae41e66ff803",
+                "reference": "e3b2a34622285bc0129dac4acaefae41e66ff803",
+                "shasum": ""
+            },
+            "require-dev": {
+                "laravel/pint": "^1.13",
+                "phpunit/phpunit": "^9.6"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Laucov\\Validation\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Apache-2.0"
+            ],
+            "authors": [
+                {
+                    "name": "Rafael Covaleski Pereira",
+                    "email": "rafael.covaleski@laucov.com"
+                }
+            ],
+            "description": "Library for data validation.",
+            "support": {
+                "issues": "https://github.com/laucov/validation/issues",
+                "source": "https://github.com/laucov/validation/tree/v0.1.0"
+            },
+            "time": "2024-03-31T02:50:39+00:00"
         }
     ],
     "packages-dev": [
