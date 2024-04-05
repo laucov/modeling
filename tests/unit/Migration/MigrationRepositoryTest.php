@@ -46,7 +46,7 @@ class MigrationRepositoryTest extends TestCase
      * @uses Laucov\Modeling\Migration\MigrationFile::__construct
      * @uses Laucov\Modeling\Migration\MigrationFile::findClassName
      */
-    public function testCanSetFiles(): void
+    public function testCanSetAndGetMigrations(): void
     {
         // Create repository.
         $repo = new MigrationRepository('Y-m-d-His');

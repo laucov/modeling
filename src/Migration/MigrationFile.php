@@ -35,6 +35,8 @@ class MigrationFile
 {
     /**
      * Migration class name.
+     * 
+     * @var class-string<AbstractMigration>
      */
     public readonly string $className;
 
