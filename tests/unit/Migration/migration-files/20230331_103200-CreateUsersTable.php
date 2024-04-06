@@ -28,6 +28,7 @@
 
 namespace Tests\Unit\Migration;
 
+use Laucov\Db\Statement\ColumnDefinition;
 use Laucov\Modeling\Migration\AbstractMigration;
 
 /**
@@ -37,9 +38,16 @@ class CreateUsersTable extends AbstractMigration
 {
     public function downgrade(): void
     {
+        $this->schema->dropTable('users');
     }
 
     public function upgrade(): void
     {
+        $this->schema->createTable(
+            'users',
+            new ColumnDefinition('id', 'INTEGER', isPk: true, isAi: true),
+            new ColumnDefinition('login', 'VARCHAR', 128),
+            new ColumnDefinition('password_hash', 'VARCHAR', 256),
+        );
     }
 }

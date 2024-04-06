@@ -28,6 +28,7 @@
 
 namespace Tests\Unit\Migration;
 
+use Laucov\Db\Statement\ColumnDefinition;
 use Laucov\Modeling\Migration\AbstractMigration;
 
 /**
@@ -37,9 +38,14 @@ class AddAircraftToPilots extends AbstractMigration
 {
     public function downgrade(): void
     {
+        $this->schema->dropColumn('pilots', 'aircraft');
     }
 
     public function upgrade(): void
     {
+        $this->schema->createColumn(
+            'pilots',
+            new ColumnDefinition('aircraft', 'VARCHAR', 32),
+        );
     }
 }

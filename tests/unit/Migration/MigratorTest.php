@@ -45,17 +45,62 @@ final class MigratorTest extends TestCase
 {
     protected Connection $conn;
 
+    protected array $dbStates = [
+        [
+            'migrations' => ['index', 'batch', 'filename', 'name', 'time_format', 'run_at'],
+            'users' => ['id', 'login', 'password_hash'],
+        ],
+        [
+            'migrations' => ['index', 'batch', 'filename', 'name', 'time_format', 'run_at'],
+            'users' => ['id', 'login', 'password_hash'],
+            'flights' => ['call_sign', 'operator', 'aircraft'],
+        ],
+        [
+            'migrations' => ['index', 'batch', 'filename', 'name', 'time_format', 'run_at'],
+            'users' => ['id', 'login', 'password_hash'],
+            'flights' => ['call_sign', 'operator', 'aircraft'],
+            'aircrafts' => ['registration', 'manufacturer', 'model'],
+        ],
+        [
+            'migrations' => ['index', 'batch', 'filename', 'name', 'time_format', 'run_at'],
+            'users' => ['id', 'login', 'password_hash'],
+            'flights' => ['call_sign', 'operator', 'aircraft'],
+            'aircrafts' => ['registration', 'manufacturer', 'model'],
+            'pilots' => ['name', 'flight_hours'],
+        ],
+        [
+            'migrations' => ['index', 'batch', 'filename', 'name', 'time_format', 'run_at'],
+            'users' => ['id', 'login', 'password_hash'],
+            'flights' => ['call_sign', 'operator', 'aircraft'],
+            'aircrafts' => ['registration', 'manufacturer', 'model'],
+            'pilots' => ['name', 'flight_hours'],
+            'customers' => ['name', 'birth'],
+        ],
+        [
+            'migrations' => ['index', 'batch', 'filename', 'name', 'time_format', 'run_at'],
+            'users' => ['id', 'login', 'password_hash'],
+            'flights' => ['call_sign', 'operator', 'aircraft'],
+            'aircrafts' => ['registration', 'manufacturer', 'model'],
+            'pilots' => ['name', 'flight_hours', 'aircraft'],
+            'customers' => ['name', 'birth'],
+        ],
+    ];
+
     protected Migrator $migrator;
 
     protected MigrationRepository $repo;
 
+    protected Schema $schema;
+
     /**
      * @covers ::__construct
+     * @todo ::audit
      * @covers ::createTable
+     * @todo ::downgrade
      * @covers ::getLast
-     * @covers ::getSchema
+     * @covers ::getMigration
      * @covers ::getTable
-     * @covers ::runMigration
+     * @covers ::rewind
      * @covers ::upgrade
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Migration\AbstractMigration::__construct
@@ -68,8 +113,12 @@ final class MigratorTest extends TestCase
      */
     public function testCanMigrate(): void
     {
+        // Create schema and table instance.
+        $table = new Table($this->conn, 'migrations');
+
         // Check null status.
         $this->assertNull($this->migrator->getLast());
+        $this->assertCount(0, $this->schema->getTables());
 
         // Migrate to the specified index.
         $this->migrator->upgrade(1);
@@ -77,8 +126,12 @@ final class MigratorTest extends TestCase
         $this->assertIsObject($migration);
         $this->assertSame(1, $migration->index);
         $this->assertSame(0, $migration->batch);
-        $this->assertSame(__DIR__ . '/migration-files/2023-03-31-105000-CreateFlightsTable.php', $migration->filename);
+        $filename = __DIR__
+            . '/migration-files/2023-03-31-105000-CreateFlightsTable.php';
+        $this->assertSame($filename, $migration->filename);
         $this->assertSame('CreateFlightsTable', $migration->name);
+        $this->assertSame(2, $table->countRecords('index'));
+        $this->assertDbState(1, 'Upgrade to index 1:');
 
         // Continue migration.
         $this->migrator->upgrade(3);
@@ -87,10 +140,8 @@ final class MigratorTest extends TestCase
         $this->assertSame(3, $migration->index);
         $this->assertSame(1, $migration->batch);
         $this->assertSame('CreatePilotsTable', $migration->name);
-
-        // Check migration records.
-        $table = new Table($this->conn, 'migrations');
         $this->assertSame(4, $table->countRecords('index'));
+        $this->assertDbState(3, 'Upgrade to index 3:');
 
         // Migrate to the last file.
         $this->migrator->upgrade();
@@ -100,6 +151,48 @@ final class MigratorTest extends TestCase
         $this->assertSame(2, $migration->batch);
         $this->assertSame('AddAircraftToPilots', $migration->name);
         $this->assertSame(6, $table->countRecords('index'));
+        $this->assertDbState(5, 'Upgrade to the last index:');
+
+        // Rewind a batch.
+        $this->migrator->rewind();
+        $migration = $this->migrator->getLast();
+        $this->assertIsObject($migration);
+        $this->assertSame(3, $migration->index);
+        $this->assertSame(1, $migration->batch);
+        $this->assertSame('CreatePilotsTable', $migration->name);
+        $this->assertSame(4, $table->countRecords('index'));
+        $this->assertDbState(3, 'Rewind last upgrade:');
+    }
+
+    protected function assertDbState(int $state_index, string $title): void
+    {
+        // Get state.
+        $state = $this->dbStates[$state_index];
+
+        // Check table count.
+        $tables = $this->schema->getTables();
+        $count = count($state);
+        $message = $title . PHP_EOL
+            . "Assert that there are exactly {$count} tables.";
+        $this->assertCount($count, $tables, $message);
+        // Check table names.
+        foreach ($state as $expt_table => $expt_cols) {
+            $message = $title . PHP_EOL
+                . "Assert that table '{$expt_table}' exists.";
+            $this->assertContains($expt_table, $tables, $message);
+            // Check column count.
+            $columns = $this->schema->getColumns($expt_table);
+            $count = count($expt_cols);
+            $message = $title . PHP_EOL
+                . "Assert that '{$expt_table}' has exactly {$count} columns.";
+            $this->assertCount($count, $columns, $message);
+            // Check column names.
+            foreach ($expt_cols as $expt_col) {
+                $message = $title . PHP_EOL
+                    . "Assert that column '{$expt_table}.{$expt_col}' exists.";
+                $this->assertContains($expt_col, $columns, $message);
+            }
+        }
     }
 
     protected function setUp(): void
@@ -107,6 +200,9 @@ final class MigratorTest extends TestCase
         // Create connection.
         $drivers = new DriverFactory();
         $this->conn = new Connection($drivers, 'sqlite::memory:');
+
+        // Create schema instance.
+        $this->schema = new Schema($this->conn);
 
         // Create migration repository.
         $directory = __DIR__ . '/migration-files';

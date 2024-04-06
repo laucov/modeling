@@ -47,10 +47,12 @@ class MigrationFileTest extends TestCase
         // Create instance.
         $directory = __DIR__ . '/migration-files';
         $filename = "{$directory}/2023-03-31-105000-CreateFlightsTable.php";
-        $migration = new MigrationFile($filename, 'Y-m-d-His');
+        $format = 'Y-m-d-His';
+        $migration = new MigrationFile($filename, $format);
         
         // Get filename, name and datetime.
         $this->assertSame($filename, $migration->filename);
+        $this->assertSame($format, $migration->timeFormat);
         $this->assertSame('CreateFlightsTable', $migration->name);
         $time = '31/03/2023 10:50:00 +00:00';
         $this->assertSame($time, $migration->date->format('d/m/Y H:i:s P'));

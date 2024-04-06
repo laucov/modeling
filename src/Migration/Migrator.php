@@ -66,6 +66,8 @@ class Migrator
          */
         protected string $tableName,
     ) {
+        // Create schema instance.
+        $this->schema = new Schema($this->connection);
     }
 
     /**
@@ -73,6 +75,12 @@ class Migrator
      */
     public function getLast(): null|Migration
     {
+        // Get tables.
+        $tables = $this->schema->getTables();
+        if (!in_array('migrations', $tables)) {
+            return null;
+        }
+
         // Get records.
         $records = $this->getTable()
             ->sort('index', true)
@@ -80,6 +88,34 @@ class Migrator
             ->selectRecords(Migration::class);
         
         return $records[0] ?? null;
+    }
+
+    /**
+     * Undo the last migration batch.
+     */
+    public function rewind(): void
+    {
+        // Get the current migration.
+        $last = $this->getLast();
+
+        // Get all migrations for the current batch.
+        $table = $this->getTable();
+        $records = $table
+            ->filter('batch', '=', $last->batch)
+            ->sort('index', true)
+            ->selectRecords(Migration::class);
+        
+        // Downgrade all migrations from the batch.
+        foreach ($records as $record) {
+            $file = new MigrationFile($record->filename, $record->time_format);
+            $migration = $this->getMigration($file);
+            $migration->downgrade();
+        }
+
+        // Remove records from the table.
+        $table
+            ->filter('batch', '=', $last->batch)
+            ->deleteRecords();
     }
 
     /**
@@ -104,18 +140,19 @@ class Migrator
                 break;
             }
             // Run and register the migration upgrade.
-            $this->runMigration($file);
+            $this->getMigration($file)->upgrade();
             $records[] = [
                 'index' => $i,
                 'batch' => $batch,
                 'filename' => $file->filename,
+                'time_format' => $file->timeFormat,
                 'name' => $file->name,
                 'run_at' => date('Y-m-d H:i:s', time()),
             ];
         }
 
         // Insert upgrade records.
-        $this->table->insertRecords(...$records);
+        $this->getTable()->insertRecords(...$records);
     }
 
     /**
@@ -124,13 +161,13 @@ class Migrator
     protected function createTable(): Table
     {
         // Check if the table exists.
-        $schema = $this->getSchema();
-        if (!in_array($this->tableName, $schema->getTables())) {
-            $schema->createTable(
+        if (!in_array($this->tableName, $this->schema->getTables())) {
+            $this->schema->createTable(
                 $this->tableName,
                 new ColumnDefinition('index', 'INT', 11),
                 new ColumnDefinition('batch', 'INT', 11),
                 new ColumnDefinition('filename', 'VARCHAR', 256),
+                new ColumnDefinition('time_format', 'VARCHAR', 64),
                 new ColumnDefinition('name', 'INT', 128),
                 new ColumnDefinition('run_at', 'DATETIME'),
             );
@@ -140,12 +177,16 @@ class Migrator
     }
 
     /**
-     * Get the schema instance.
+     * Run a migration from its file object.
      */
-    protected function getSchema(): Schema
+    protected function getMigration(MigrationFile $file): AbstractMigration
     {
-        $this->schema ??= new Schema($this->connection);
-        return $this->schema;
+        // Include the file.
+        require_once $file->filename;
+
+        // Instantiate.
+        $class_name = $file->className;
+        return new $class_name($this->connection);
     }
 
     /**
@@ -158,21 +199,5 @@ class Migrator
         }
 
         return $this->table;
-    }
-
-    /**
-     * Run a migration from its file object.
-     */
-    protected function runMigration(MigrationFile $migration_file): void
-    {
-        // Include the file.
-        require_once $migration_file->filename;
-
-        // Instantiate.
-        $class_name = $migration_file->className;
-        $migration = new $class_name($this->connection);
-        
-        // Run.
-        $migration->upgrade();
     }
 }

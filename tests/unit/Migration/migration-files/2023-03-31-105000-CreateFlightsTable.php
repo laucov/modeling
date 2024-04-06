@@ -28,6 +28,7 @@
 
 namespace Tests\Unit\Migration;
 
+use Laucov\Db\Statement\ColumnDefinition;
 use Laucov\Modeling\Migration\AbstractMigration;
 
 /**
@@ -37,9 +38,16 @@ class CreateFlightsTable extends AbstractMigration
 {
     public function downgrade(): void
     {
+        $this->schema->dropTable('flights');
     }
 
     public function upgrade(): void
     {
+        $this->schema->createTable(
+            'flights',
+            new ColumnDefinition('call_sign', 'VARCHAR', 32),
+            new ColumnDefinition('operator', 'VARCHAR', 128),
+            new ColumnDefinition('aircraft', 'VARCHAR', 128),
+        );
     }
 }

@@ -59,7 +59,10 @@ class MigrationFile
          */
         public readonly string $filename,
 
-        string $time_format,
+        /**
+         * Time format used for the filename prefix.
+         */
+        public readonly string $timeFormat,
     ) {
         // Validate file basename.
         $basename = basename($filename);
@@ -80,10 +83,13 @@ class MigrationFile
 
         // Set date.
         $datetime = substr($basename, 0, $split_at);
-        $date = \DateTimeImmutable::createFromFormat($time_format, $datetime);
+        $date = \DateTimeImmutable::createFromFormat(
+            $this->timeFormat,
+            $datetime,
+        );
         if (is_bool($date)) {
             $message = 'Migration datetime does not match the format %s.';
-            throw new \RuntimeException(sprintf($message, $time_format));
+            throw new \RuntimeException(sprintf($message, $this->timeFormat));
         }
         $this->date = $date;
 

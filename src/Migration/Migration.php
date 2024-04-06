@@ -56,6 +56,11 @@ class Migration extends AbstractEntity
     public string $name;
 
     /**
+     * Filename time format.
+     */
+    public string $time_format;
+
+    /**
      * Execution date.
      */
     public string $run_at;

@@ -28,6 +28,7 @@
 
 namespace Tests\Unit\Migration;
 
+use Laucov\Db\Statement\ColumnDefinition;
 use Laucov\Modeling\Migration\AbstractMigration;
 
 /**
@@ -37,9 +38,15 @@ class CreateCustomersTable extends AbstractMigration
 {
     public function downgrade(): void
     {
+        $this->schema->dropTable('customers');
     }
 
     public function upgrade(): void
     {
+        $this->schema->createTable(
+            'customers',
+            new ColumnDefinition('name', 'VARCHAR', 128),
+            new ColumnDefinition('birth', 'DATE'),
+        );
     }
 }
