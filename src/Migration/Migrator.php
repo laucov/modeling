@@ -45,7 +45,7 @@ class Migrator
     /**
      * Table instance.
      */
-    public Table $table;
+    public null|Table $table = null;
 
     /**
      * Create the migrator instance.
@@ -71,6 +71,42 @@ class Migrator
     }
 
     /**
+     * Downgrade one or more migrations.
+     */
+    public function downgrade(null|int $indexes = 1): void
+    {
+        // Get the current migration.
+        $last = $this->getLast();
+
+        // Set the target index.
+        $to_index = $indexes === null ? -1 : $last->index - $indexes;
+
+        // Get all migrations above the batch.
+        $table = $this->getTable();
+        $records = $table
+            ->filter('index', '>', $to_index)
+            ->sort('index', true)
+            ->selectRecords(Migration::class);
+        
+        // Downgrade all found migrations.
+        foreach ($records as $record) {
+            $file = new MigrationFile($record->filename, $record->time_format);
+            $migration = $this->getMigration($file);
+            $migration->downgrade();
+        }
+
+        // Remove records for the rewinded batches.
+        if ($to_index >= 0) {
+            $table
+                ->filter('index', '>', $to_index)
+                ->deleteRecords();
+        } else {
+            $this->schema->dropTable('migrations');
+            $this->table = null;
+        }
+    }
+
+    /**
      * Get the last executed migration data.
      */
     public function getLast(): null|Migration
@@ -91,59 +127,74 @@ class Migrator
     }
 
     /**
-     * Undo the last migration batch.
+     * Undo migration batches.
      */
-    public function rewind(): void
+    public function rewind(int $batches = 1): void
     {
         // Get the current migration.
         $last = $this->getLast();
 
-        // Get all migrations for the current batch.
+        // Set the target batch.
+        $to_batch = $last->batch - $batches;
+
+        // Get all migrations above the batch.
         $table = $this->getTable();
         $records = $table
-            ->filter('batch', '=', $last->batch)
+            ->filter('batch', '>', $to_batch)
             ->sort('index', true)
             ->selectRecords(Migration::class);
         
-        // Downgrade all migrations from the batch.
+        // Downgrade all found migrations.
         foreach ($records as $record) {
             $file = new MigrationFile($record->filename, $record->time_format);
             $migration = $this->getMigration($file);
             $migration->downgrade();
         }
 
-        // Remove records from the table.
-        $table
-            ->filter('batch', '=', $last->batch)
-            ->deleteRecords();
+        // Remove records for the rewinded batches.
+        if ($to_batch >= 0) {
+            $table
+                ->filter('batch', '>', $to_batch)
+                ->deleteRecords();
+        } else {
+            $this->schema->dropTable('migrations');
+            $this->table = null;
+        }
     }
 
     /**
-     * Run migrations until the specific index.
+     * Run one or more pending migrations.
      */
-    public function upgrade(null|int $to = null): void
+    public function upgrade(null|int $indexes = null): void
     {
-        // Get the last migration data.
+        // Get last migration data.
         $last = $this->getLast();
-        $batch = $last === null ? 0 : $last->batch + 1;
-        $offset = $last === null ? 0 : $last->index + 1;
 
-        // Get all files from the last registered index.
+        // Get all files after last reached index.
+        $offset = $last === null ? 0 : $last->index + 1;
         $files = $this->repository->listFiles();
         $files = array_slice($files, $offset, null, true);
 
-        // Run each one until the specified index.
+        // Set the new batch number.
+        $new_batch = $last === null ? 0 : $last->batch + 1;
+
+        // Set the ceil index.
+        $to_index = $indexes !== null
+            ? ($last === null ? $indexes - 1 : $last->index + $indexes)
+            : array_key_last($files);
+
+        // Run each migration file until the specified index.
         $records = [];
         foreach ($files as $i => $file) {
             // Stop if the requested index was reached.
-            if ($to !== null && $i > $to) {
+            if ($i > $to_index) {
                 break;
             }
             // Run and register the migration upgrade.
             $this->getMigration($file)->upgrade();
             $records[] = [
                 'index' => $i,
-                'batch' => $batch,
+                'batch' => $new_batch,
                 'filename' => $file->filename,
                 'time_format' => $file->timeFormat,
                 'name' => $file->name,
@@ -194,7 +245,7 @@ class Migrator
      */
     protected function getTable(): Table
     {
-        if (!isset($this->table)) {
+        if ($this->table === null) {
             $this->table = $this->createTable();
         }
 
