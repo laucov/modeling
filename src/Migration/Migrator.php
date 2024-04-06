@@ -77,6 +77,9 @@ class Migrator
     {
         // Get the current migration.
         $last = $this->getLast();
+        if ($last === null) {
+            return;
+        }
 
         // Set the target index.
         $to_index = $indexes === null ? -1 : $last->index - $indexes;
@@ -133,6 +136,9 @@ class Migrator
     {
         // Get the current migration.
         $last = $this->getLast();
+        if ($last === null) {
+            return;
+        }
 
         // Set the target batch.
         $to_batch = $last->batch - $batches;

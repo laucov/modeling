@@ -168,6 +168,11 @@ final class MigratorTest extends TestCase
         $this->assertNull($this->migrator->getLast());
         $this->assertCount(0, $this->schema->getTables());
 
+        // Rewind with no active batches - does nothing.
+        $this->migrator->rewind();
+        $this->assertNull($this->migrator->getLast());
+        $this->assertCount(0, $this->schema->getTables());
+
         // Upgrade again so we can test downgrades.
         $this->migrator->upgrade();
         $migration = $this->migrator->getLast();
@@ -196,6 +201,11 @@ final class MigratorTest extends TestCase
 
         // Perform a full downgrade.
         $this->migrator->downgrade(null);
+        $this->assertNull($this->migrator->getLast());
+        $this->assertCount(0, $this->schema->getTables());
+
+        // Rewind with no active files - does nothing.
+        $this->migrator->downgrade();
         $this->assertNull($this->migrator->getLast());
         $this->assertCount(0, $this->schema->getTables());
     }
