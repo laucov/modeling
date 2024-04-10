@@ -93,8 +93,8 @@ final class MigratorTest extends TestCase
     protected Schema $schema;
 
     /**
-     * @covers ::__construct
      * @todo ::audit
+     * @covers ::__construct
      * @covers ::createTable
      * @covers ::downgrade
      * @covers ::getLast
@@ -131,7 +131,7 @@ final class MigratorTest extends TestCase
         $this->assertSame($filename, $migration->filename);
         $this->assertSame('CreateFlightsTable', $migration->name);
         $this->assertSame(2, $table->countRecords('index'));
-        $this->assertDbState(1, 'Upgrade to index 1:');
+        $this->assertDbState($this->dbStates[1], 'Upgrade to index 1');
 
         // Run another two migrations.
         $this->migrator->upgrade(2);
@@ -141,7 +141,7 @@ final class MigratorTest extends TestCase
         $this->assertSame(1, $migration->batch);
         $this->assertSame('CreatePilotsTable', $migration->name);
         $this->assertSame(4, $table->countRecords('index'));
-        $this->assertDbState(3, 'Upgrade to index 3:');
+        $this->assertDbState($this->dbStates[3], 'Upgrade to index 3');
 
         // Migrate to the last file.
         $this->migrator->upgrade();
@@ -151,7 +151,7 @@ final class MigratorTest extends TestCase
         $this->assertSame(2, $migration->batch);
         $this->assertSame('AddAircraftToPilots', $migration->name);
         $this->assertSame(6, $table->countRecords('index'));
-        $this->assertDbState(5, 'Upgrade to the last index:');
+        $this->assertDbState($this->dbStates[5], 'Upgrade to the last index');
 
         // Rewind the last migration batch.
         $this->migrator->rewind();
@@ -161,7 +161,7 @@ final class MigratorTest extends TestCase
         $this->assertSame(1, $migration->batch);
         $this->assertSame('CreatePilotsTable', $migration->name);
         $this->assertSame(4, $table->countRecords('index'));
-        $this->assertDbState(3, 'Rewind last upgrade batch (2 -> 1):');
+        $this->assertDbState($this->dbStates[3], 'Rewind last batch (2 to 1)');
 
         // Rewind the last two migration batches.
         $this->migrator->rewind(2);
@@ -187,7 +187,7 @@ final class MigratorTest extends TestCase
         $this->assertSame(0, $migration->batch);
         $this->assertSame('CreateCustomersTable', $migration->name);
         $this->assertSame(5, $table->countRecords('index'));
-        $this->assertDbState(4, 'Downgrade a single index:');
+        $this->assertDbState($this->dbStates[4], 'Downgrade a single index');
 
         // Downgrade multiple migrations.
         $this->migrator->downgrade(2);
@@ -197,7 +197,7 @@ final class MigratorTest extends TestCase
         $this->assertSame(0, $migration->batch);
         $this->assertSame('CreateAircraftsTable', $migration->name);
         $this->assertSame(3, $table->countRecords('index'));
-        $this->assertDbState(2, 'Downgrade multiple indexes:');
+        $this->assertDbState($this->dbStates[2], 'Downgrade multiple indexes');
 
         // Perform a full downgrade.
         $this->migrator->downgrade(null);
@@ -210,17 +210,18 @@ final class MigratorTest extends TestCase
         $this->assertCount(0, $this->schema->getTables());
     }
 
-    protected function assertDbState(int $state_index, string $title): void
+    /**
+     * Assert that the database has the given tables and columns.
+     */
+    protected function assertDbState(array $state, string $title): void
     {
-        // Get state.
-        $state = $this->dbStates[$state_index];
-
         // Check table count.
         $tables = $this->schema->getTables();
         $count = count($state);
         $message = $title . PHP_EOL
             . "Assert that there are exactly {$count} tables.";
         $this->assertCount($count, $tables, $message);
+
         // Check table names.
         foreach ($state as $expt_table => $expt_cols) {
             $message = $title . PHP_EOL
