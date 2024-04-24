@@ -49,6 +49,23 @@ class AbstractModelTest extends TestCase
     protected AirplaneModel $model;
 
     /**
+     * Provides arguments to retrieve duplicated entries.
+     */
+    public function duplicatedAirplaneModelRetrievalProvider(): array
+    {
+        return [
+            [
+                ['SR22', 'EMB-820C Caraja'],
+                ['EMB-820C Caraja', '737 MAX 8'],
+            ],
+            [
+                ['PA-46-500TP', '72-500'],
+                ['A320-251N', 'foo', 'bar'],
+            ],
+        ];
+    }
+
+    /**
      * @covers ::applyDeletionFilter
      * @covers ::delete
      * @covers ::erase
@@ -391,15 +408,16 @@ class AbstractModelTest extends TestCase
      */
     public function testFailsIfRetrievesDuplicatedEntries(): void
     {
-        // Create model.
-        $model = new FaultyModel($this->conn);
+        // Create model with faulty primary key.
+        $model = new class ($this->conn) extends AirplaneModel
+        {
+            protected string $primaryKey = 'model';
+        };
 
-        // Get with unique model.
-        $model->retrieve('EMB-820C Caraja');
-
-        // Get with repeated model.
+        // Test IDs.
+        $model->retrieve('SR22');
         $this->expectException(\RuntimeException::class);
-        $model->retrieve('737 MAX 8');
+        $model->retrieve('A320-251N');
     }
 
     /**
@@ -409,18 +427,110 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
+     * @dataProvider duplicatedAirplaneModelRetrievalProvider
      */
-    public function testFailsIfRetrievesBatchesWithDuplicatedEntries(): void
-    {
-        // Create model.
-        $model = new FaultyModel($this->conn);
+    public function testFailsIfRetrievesBatchesWithDuplicatedEntries(
+        array $lucky_ids,
+        array $faulty_ids,
+    ): void {
+        // Create model with faulty primary key.
+        $model = new class ($this->conn) extends AirplaneModel
+        {
+            protected string $primaryKey = 'model';
+        };
 
-        // Get with unique models.
-        $model->retrieveBatch('SR22', 'EMB-820C Caraja');
-
-        // Get with unique and repeated models.
+        // Test IDs.
+        $model->retrieveBatch(...$lucky_ids);
         $this->expectException(\RuntimeException::class);
-        $model->retrieveBatch('EMB-820C Caraja', '737 MAX 8');
+        $model->retrieveBatch(...$faulty_ids);
+    }
+
+    /**
+     * @covers ::getEntities
+     * @covers ::retrieveBatch
+     * @covers ::withColumns
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::getEntity
+     * @uses Laucov\Modeling\Model\AbstractModel::list
+     * @uses Laucov\Modeling\Model\AbstractModel::listAll
+     * @uses Laucov\Modeling\Model\AbstractModel::paginate
+     * @uses Laucov\Modeling\Model\AbstractModel::resetPagination
+     * @uses Laucov\Modeling\Model\AbstractModel::retrieve
+     * @uses Laucov\Modeling\Model\Collection::__construct
+     * @uses Laucov\Modeling\Model\Collection::get
+     */
+    public function testSelectsColumns(): void
+    {
+        // Create custom model.
+        // Use AirplaneWithSetter to track unused fetched columns.
+        /** @var AbstractModel<AirplaneWithSetter> */
+        $model = new class ($this->conn) extends AbstractModel
+        {
+            protected string $entityName = AirplaneWithSetter::class;
+            protected string $primaryKey = 'id';
+            protected string $tableName = 'airplanes';
+        };
+
+        // List with specific columns.
+        $entity = $model
+            ->withColumns('manufacturer', 'model')
+            ->paginate(1, 1)
+            ->listAll()
+            ->get(0);
+        $this->assertFalse(isset($entity->id));
+        $this->assertTrue(isset($entity->manufacturer));
+        $this->assertTrue(isset($entity->model));
+        $this->assertFalse(isset($entity->registration));
+        $this->assertCount(0, $entity->getUnusedColumns());
+
+        // List with all columns - ensure columns are reset.
+        $entity = $model
+            ->paginate(1, 1)
+            ->listAll()
+            ->get(0);
+        $this->assertTrue(isset($entity->id));
+        $this->assertTrue(isset($entity->manufacturer));
+        $this->assertTrue(isset($entity->model));
+        $this->assertTrue(isset($entity->registration));
+        $this->assertCount(0, $entity->getUnusedColumns());
+
+        // Retrieve with specific columns.
+        $entity = $model
+            ->withColumns('manufacturer', 'model')
+            ->retrieve('1');
+        $this->assertFalse(isset($entity->id));
+        $this->assertTrue(isset($entity->manufacturer));
+        $this->assertTrue(isset($entity->model));
+        $this->assertFalse(isset($entity->registration));
+        $this->assertCount(0, $entity->getUnusedColumns());
+
+        // Retrieve with all columns - ensure columns are reset.
+        $entity = $model->retrieve('1');
+        $this->assertTrue(isset($entity->id));
+        $this->assertTrue(isset($entity->manufacturer));
+        $this->assertTrue(isset($entity->model));
+        $this->assertTrue(isset($entity->registration));
+        $this->assertCount(0, $entity->getUnusedColumns());
+
+        // Retrieve batch with specific columns.
+        $entity = $model
+            ->withColumns('manufacturer', 'model')
+            ->retrieveBatch('1')[0];
+        $this->assertTrue(isset($entity->id));
+        $this->assertTrue(isset($entity->manufacturer));
+        $this->assertTrue(isset($entity->model));
+        $this->assertFalse(isset($entity->registration));
+        $this->assertCount(0, $entity->getUnusedColumns());
+
+        // Retrieve batch with all columns - ensure columns are reset.
+        $entity = $model->retrieveBatch('1')[0];
+        $this->assertTrue(isset($entity->id));
+        $this->assertTrue(isset($entity->manufacturer));
+        $this->assertTrue(isset($entity->model));
+        $this->assertTrue(isset($entity->registration));
+        $this->assertCount(0, $entity->getUnusedColumns());
     }
 
     protected function setUp(): void
@@ -460,6 +570,15 @@ class AbstractModelTest extends TestCase
     }
 }
 
+class Airplane extends AbstractEntity
+{
+    public int $id;
+    #[Regex('/^[A-Z]{2}\-[A-Z]{3}$/')]
+    public string $registration;
+    public string $manufacturer;
+    public string $model;
+}
+
 /**
  * @extends AbstractModel<Airplane>
  */
@@ -470,13 +589,18 @@ class AirplaneModel extends AbstractModel
     protected string $tableName = 'airplanes';
 }
 
-class Airplane extends AbstractEntity
+class AirplaneWithSetter extends Airplane
 {
-    public int $id;
-    #[Regex('/^[A-Z]{2}\-[A-Z]{3}$/')]
-    public string $registration;
-    public string $manufacturer;
-    public string $model;
+    protected array $unusedColumns = [];
+    public function __set(string $name, mixed $value): void
+    {
+        $this->unusedColumns[] = $name;
+        parent::__set($name, $value);
+    }
+    public function getUnusedColumns(): array
+    {
+        return $this->unusedColumns;
+    }
 }
 
 /**

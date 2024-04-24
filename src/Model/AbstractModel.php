@@ -51,6 +51,13 @@ abstract class AbstractModel
     protected DeletionFilter $deletionFilter = DeletionFilter::HIDE;
 
     /**
+     * The entity's public properties names.
+     * 
+     * @var array<string>
+     */
+    protected array $entityKeys;
+
+    /**
      * AbstractEntity class name.
      * 
      * @var class-string<T>
@@ -71,6 +78,13 @@ abstract class AbstractModel
      * Primary key column.
      */
     protected string $primaryKey;
+
+    /**
+     * Columns to select when getting entities.
+     * 
+     * @var array<string>
+     */
+    protected array $selecting = [];
 
     /**
      * Sorting calls.
@@ -105,6 +119,8 @@ abstract class AbstractModel
     ) {
         // Store a table instance.
         $this->table = new Table($connection, $this->tableName);
+        // Store entity's key names.
+        $this->entityKeys = array_keys(get_class_vars($this->entityName));
     }
 
     /**
@@ -233,17 +249,27 @@ abstract class AbstractModel
     /**
      * Find multiple records by their primary key value.
      * 
+     * Note: the primary key is aways fetched when using this method.
+     * 
      * @return array<T>
      */
     public function retrieveBatch(string ...$ids): array
     {
-        // Get records.
+        // Check if the primary key is selected.
+        if (
+            count($this->selecting) > 0
+            && !in_array($this->primaryKey, $this->selecting, true)
+        ) {
+            $this->selecting[] = $this->primaryKey;
+        }
+
+        // Get records.        
         $this->table->filter($this->primaryKey, '=', $ids);
         $records = $this->getEntities();
 
-        // Check IDs.
-        $ids = array_map(fn ($r) => $r->{$this->primaryKey}, $records);
-        if (count($ids) !== count(array_unique($ids))) {
+        // Check for duplicated IDs.
+        $record_ids = array_map(fn ($r) => $r->{$this->primaryKey}, $records);
+        if (count($record_ids) > count(array_unique($record_ids))) {
             $msg = 'Found duplicated entries when querying for multiple IDs.';
             throw new \RuntimeException($msg);
         }
@@ -343,6 +369,17 @@ abstract class AbstractModel
     }
 
     /**
+     * Set the columns to get.
+     * 
+     * Note: entity properties that depend on unfetched columns won't be set.
+     */
+    public function withColumns(string ...$column_names): static
+    {
+        $this->selecting = $column_names;
+        return $this;
+    }
+
+    /**
      * Set a value for further batch update.
      */
     public function withValue(
@@ -384,6 +421,16 @@ abstract class AbstractModel
      */
     protected function getEntities(): array
     {
+        // Select columns.
+        $column_names = count($this->selecting) > 0
+            ? $this->selecting
+            : $this->entityKeys;
+        foreach ($column_names as $column_name) {
+            $this->table->pick($column_name);
+        }
+        $this->selecting = [];
+
+        // Apply filters and fetch.
         $this->applyDeletionFilter();
         $records = $this->table->selectRecords($this->entityName);
 
