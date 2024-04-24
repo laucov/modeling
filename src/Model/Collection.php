@@ -34,6 +34,7 @@ use Laucov\Modeling\Entity\AbstractEntity;
  * Represents a list of database records.
  * 
  * @template T of AbstractEntity
+ * @implements \Iterator<int, T>
  */
 class Collection implements \Countable, \Iterator
 {
@@ -52,7 +53,7 @@ class Collection implements \Countable, \Iterator
     /**
      * Create the collection instance.
      * 
-     * @param T $entities
+     * @param T ...$entities
      */
     public function __construct(
         /**
@@ -74,6 +75,7 @@ class Collection implements \Countable, \Iterator
          * Total number of records in the database table.
          */
         public readonly int $storedCount,
+
         AbstractEntity ...$entities,
     ) {
         $this->entities = $entities;
