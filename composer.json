@@ -21,6 +21,6 @@
     },
     "require": {
         "laucov/db": "^1.0",
-        "laucov/validation": "^0.1.0"
+        "laucov/validation": "^0"
     }
 }
