@@ -106,6 +106,8 @@ class AbstractEntityTest extends TestCase
      * @covers ::cacheRules
      * @covers ::hasErrors
      * @covers ::getErrors
+     * @covers ::getProperties
+     * @covers ::getPropertyNames
      * @covers ::getRuleset
      * @covers ::validate
      * @uses Laucov\Modeling\Entity\AbstractEntity::cache

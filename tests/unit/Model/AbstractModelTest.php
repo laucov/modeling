@@ -127,6 +127,8 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Entity\AbstractEntity::__set
      * @uses Laucov\Modeling\Entity\AbstractEntity::cacheRules
      * @uses Laucov\Modeling\Entity\AbstractEntity::getEntries
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getProperties
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getPropertyNames
      * @uses Laucov\Modeling\Entity\AbstractEntity::getRuleset
      * @uses Laucov\Modeling\Entity\AbstractEntity::toArray
      * @uses Laucov\Modeling\Entity\AbstractEntity::validate

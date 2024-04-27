@@ -51,6 +51,20 @@ abstract class AbstractEntity
      * @var array<string, RuleInterface[]>
      */
     protected array $errors = [];
+    
+    /**
+     * Reflection properties.
+     * 
+     * @var array<\ReflectionProperty>
+     */
+    protected array $properties;
+
+    /**
+     * Property names.
+     * 
+     * @var array<string>
+     */
+    protected array $propertyNames;
 
     /**
      * Cached property rules.
@@ -133,10 +147,10 @@ abstract class AbstractEntity
     {
         // Reset errors and get stored values.
         $this->errors = [];
-        $values = $this->toArray();
 
         // Validate each value.
-        foreach ($values as $name => $value) {
+        foreach ($this->getPropertyNames() as $name) {
+            $value = $this->$name ?? null;
             $ruleset = $this->getRuleset($name);
             if (!$ruleset->validate($value)) {
                 $this->errors[$name] = $ruleset->getErrors();
@@ -151,16 +165,12 @@ abstract class AbstractEntity
      */
     protected function cacheRules(): void
     {
-        // Get properties.
-        $class = new \ReflectionClass(static::class);
-        /** @var \ReflectionProperty[] */
-        $props = $class->getProperties(\ReflectionProperty::IS_PUBLIC);
-
         // Extract each properties' rules.
-        foreach ($props as $prop) {
+        foreach ($this->getProperties() as $prop) {
             // Get name and instantiate the ruleset.
             $name = $prop->getName();
-            $this->rules[$name] = new Ruleset();
+            $ruleset = new Ruleset();
+            $this->rules[$name] = $ruleset;
             // Get attributes and add each rule.
             /** @var \ReflectionAttribute[] */
             $attributes = $prop->getAttributes(
@@ -168,9 +178,40 @@ abstract class AbstractEntity
                 \ReflectionAttribute::IS_INSTANCEOF,
             );
             foreach ($attributes as $attribute) {
-                $this->rules[$name]->addRule($attribute->newInstance());
+                $ruleset->addRule($attribute->newInstance());
             }
         }
+    }
+
+    /**
+     * Get all the entity's public property reflections.
+     * 
+     * @return array<\ReflectionProperty>
+     */
+    protected function getProperties(): array
+    {
+        // Cache properties.
+        if (!isset($this->properties)) {
+            $reflection = new \ReflectionObject($this);
+            $filter = \ReflectionProperty::IS_PUBLIC;
+            $this->properties = $reflection->getProperties($filter);
+        }
+
+        return $this->properties;
+    }
+
+    /**
+     * Get all the entity's public property names.
+     */
+    protected function getPropertyNames(): array
+    {
+        // Cache names.
+        if (!isset($this->propertyNames)) {
+            $props = $this->getProperties();
+            $this->propertyNames = array_map(fn ($p) => $p->getName(), $props);
+        }
+
+        return $this->propertyNames;
     }
 
     /**
