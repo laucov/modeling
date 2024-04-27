@@ -170,6 +170,7 @@ abstract class AbstractEntity
             // Get name and instantiate the ruleset.
             $name = $prop->getName();
             $ruleset = new Ruleset();
+            $ruleset->setData($this);
             $this->rules[$name] = $ruleset;
             // Get attributes and add each rule.
             /** @var \ReflectionAttribute[] */

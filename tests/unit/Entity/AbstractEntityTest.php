@@ -33,6 +33,7 @@ namespace Tests\Unit\Entity;
 use Laucov\Modeling\Entity\AbstractEntity;
 use Laucov\Validation\Rules\Length;
 use Laucov\Validation\Rules\Regex;
+use Laucov\Validation\Rules\RequiredWith;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -133,6 +134,9 @@ class AbstractEntityTest extends TestCase
             #[Regex('/\d+/')]
             #[Regex('/[\!\#\$\%\&\@]+/')]
             public string $password;
+            public bool $has_email;
+            #[RequiredWith('has_email')]
+            public string $email;
         };
 
         // Validate valid values.
@@ -170,6 +174,13 @@ class AbstractEntityTest extends TestCase
         // Fix again.
         $entity->password = 'SECUREpass@987654321';
         $this->assertTrue($entity->validate());
+
+        // Test context data.
+        $entity->has_email = true;
+        $this->assertFalse($entity->validate());
+        $errors = $entity->getErrors('email');
+        $this->assertCount(1, $errors);
+        $this->assertInstanceOf(RequiredWith::class, $errors[0]);
     }
 
     /**
