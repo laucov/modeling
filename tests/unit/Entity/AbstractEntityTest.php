@@ -33,6 +33,7 @@ namespace Tests\Unit\Entity;
 use Laucov\Modeling\Entity\AbstractEntity;
 use Laucov\Validation\Rules\Length;
 use Laucov\Validation\Rules\Regex;
+use Laucov\Validation\Rules\Required;
 use Laucov\Validation\Rules\RequiredWith;
 use PHPUnit\Framework\TestCase;
 
@@ -211,7 +212,7 @@ class AbstractEntityTest extends TestCase
      * @covers ::__set
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      */
-    public function testIgnoresInexistentProperties(): void
+    public function testIgnoresInexistentPropertyAssignments(): void
     {
         // Create entity instance.
         $entity = new class () extends AbstractEntity {
@@ -222,6 +223,34 @@ class AbstractEntityTest extends TestCase
         // Set invalid properties.
         $entity->publisher = 'John Doe Printing Inc.';
         $this->assertFalse(isset($entity->publisher));
+    }
+
+    /**
+     * @covers ::validate
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Entity\AbstractEntity::cacheRules
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getErrorKeys
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getProperties
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getPropertyNames
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getRuleset
+     * @uses Laucov\Modeling\Entity\AbstractEntity::hasErrors
+     */
+    public function testValidatesUnsetProperties(): void
+    {
+        // Create entity instance.
+        $entity = new class () extends AbstractEntity {
+            #[Required]
+            public string $first_name;
+            #[Length(8, 128)]
+            public string $last_name;
+        };
+
+        // Validate.
+        $this->assertValidation($entity, [
+            'first_name' => [Required::class],
+            'last_name' => [Length::class],
+        ]);
     }
 
     /**
@@ -236,7 +265,7 @@ class AbstractEntityTest extends TestCase
         $actual_success = $entity->validate();
         $message = 'Assert that the entity data %s valid.';
         $message = sprintf($message, $expected_success ? 'is' : 'is not');
-        $this->assertSame($expected_success, $actual_success);
+        $this->assertSame($expected_success, $actual_success, $message);
 
         // Assert that has errors.
         if ($expected_success) {
