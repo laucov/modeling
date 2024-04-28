@@ -113,11 +113,23 @@ abstract class AbstractEntity
     }
 
     /**
-     * Get current errors.
+     * Get all invalid properties names.
+     * 
+     * @return array<string>
      */
-    public function getErrors(string $name): array
+    public function getErrorKeys(): array
     {
-        return $this->errors[$name] ?? [];
+        return array_keys($this->errors);
+    }
+
+    /**
+     * Get current errors.
+     * 
+     * @return array<RuleInterface>
+     */
+    public function getErrors(string $property_name): array
+    {
+        return $this->errors[$property_name] ?? [];
     }
 
     /**

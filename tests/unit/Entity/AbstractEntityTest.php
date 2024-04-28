@@ -90,6 +90,7 @@ class AbstractEntityTest extends TestCase
             public string $number = '5555555555554444';
             public string $cvc = '123';
             public string $expires_on = '2024-05-01';
+            public string $unused_prop;
         };
 
         // Get as array.
@@ -106,6 +107,7 @@ class AbstractEntityTest extends TestCase
      * @covers ::__construct
      * @covers ::cacheRules
      * @covers ::hasErrors
+     * @covers ::getErrorKeys
      * @covers ::getErrors
      * @covers ::getProperties
      * @covers ::getPropertyNames
@@ -142,45 +144,31 @@ class AbstractEntityTest extends TestCase
         // Validate valid values.
         $entity->login = 'john.doe';
         $entity->password = 'Secret_Pass#1234';
-        $this->assertTrue($entity->validate());
+        $this->assertValidation($entity, []);
 
         // Set invalid value.
         $entity->login = 'john.manoel.foobar.doe';
-        $this->assertFalse($entity->validate());
-        $errors = $entity->getErrors('login');
-        $this->assertIsArray($errors);
-        $this->assertCount(1, $errors);
-        $this->assertInstanceOf(Length::class, $errors[0]);
-        $errors = $entity->getErrors('password');
-        $this->assertCount(0, $errors);
+        $this->assertValidation($entity, ['login' => [Length::class]]);
 
         // Fix and add another invalid value.
         $entity->login = 'john.foobar';
         $entity->password = 'ABCDEF';
-        $this->assertFalse($entity->validate());
-        $this->assertTrue($entity->hasErrors());
-        $this->assertFalse($entity->hasErrors('login'));
-        $errors = $entity->getErrors('login');
-        $this->assertCount(0, $errors);
-        $this->assertTrue($entity->hasErrors('password'));
-        $errors = $entity->getErrors('password');
-        $this->assertIsArray($errors);
-        $this->assertCount(4, $errors);
-        $this->assertInstanceOf(Length::class, $errors[0]);
-        $this->assertInstanceOf(Regex::class, $errors[1]);
-        $this->assertInstanceOf(Regex::class, $errors[2]);
-        $this->assertInstanceOf(Regex::class, $errors[3]);
+        $this->assertValidation($entity, [
+            'password' => [
+                Length::class,
+                Regex::class,
+                Regex::class,
+                Regex::class,
+            ],
+        ]);
 
         // Fix again.
         $entity->password = 'SECUREpass@987654321';
-        $this->assertTrue($entity->validate());
+        $this->assertValidation($entity, []);
 
         // Test context data.
         $entity->has_email = true;
-        $this->assertFalse($entity->validate());
-        $errors = $entity->getErrors('email');
-        $this->assertCount(1, $errors);
-        $this->assertInstanceOf(RequiredWith::class, $errors[0]);
+        $this->assertValidation($entity, ['email' => [RequiredWith::class]]);
     }
 
     /**
@@ -198,5 +186,75 @@ class AbstractEntityTest extends TestCase
         // Set invalid properties.
         $entity->publisher = 'John Doe Printing Inc.';
         $this->assertFalse(isset($entity->publisher));
+    }
+
+    /**
+     * Assert that the entity contains the given errors.
+     */
+    protected function assertValidation(
+        AbstractEntity $entity,
+        array $expected_errors = [],
+    ): void {
+        // Compare validation result.
+        $expected_success = count($expected_errors) < 1;
+        $actual_success = $entity->validate();
+        $message = 'Assert that the entity data %s valid.';
+        $message = sprintf($message, $expected_success ? 'is' : 'is not');
+        $this->assertSame($expected_success, $actual_success);
+
+        // Assert that has errors.
+        if ($expected_success) {
+            $message = 'Assert that the entity doesn\'t have errors.';
+            $this->assertFalse($entity->hasErrors(), $message);
+        } else {
+            $message = 'Assert that the entity has errors.';
+            $this->assertTrue($entity->hasErrors(), $message);
+        }
+
+        // Check error keys.
+        $expected_keys = array_keys($expected_errors);
+        $actual_keys = $entity->getErrorKeys();
+        $unexpected = array_diff($actual_keys, $expected_keys);
+        if (count($unexpected) > 0) {
+            $message = 'Missing entity error keys: %s.';
+            $this->fail(sprintf($message, implode(', ', $unexpected)));
+        }
+        $missing = array_diff($expected_keys, $actual_keys);
+        if (count($missing) > 0) {
+            $message = 'Found unexpected entity error keys: %s.';
+            $this->fail(sprintf($message, implode(', ', $missing)));
+        }
+
+        // Get public property names.
+        $reflection = new \ReflectionObject($entity);
+        $filter = \ReflectionProperty::IS_PUBLIC;
+        $properties = $reflection->getProperties($filter);
+        $property_names = array_map(fn ($p) => $p->getName(), $properties);
+
+        // Compare property names.
+        $err_tpl = 'Failed to assert that entity property "%s" %s errors.';
+        foreach ($property_names as $name) {
+            $has_errors = $entity->hasErrors($name);
+            $expects_errors = array_key_exists($name, $expected_errors);
+            if ($has_errors && !$expects_errors) {
+                $this->fail(sprintf($err_tpl, $name, 'does not have'));
+            } elseif (!$has_errors && $expects_errors) {
+                $this->fail(sprintf($err_tpl, $name, 'has'));
+            }
+        }
+
+        // Check property errors.
+        foreach ($expected_errors as $name => $expected_classes) {
+            $actual_errors = $entity->getErrors($name);
+            $this->assertIsArray($actual_errors);
+            $msg_tpl = 'Assert that entity property "%s" #%s error is a %s.';
+            foreach ($expected_classes as $i => $expected_class) {
+                $message = sprintf($msg_tpl, $name, $i, $expected_class);
+                $actual_class = $actual_errors[$i]::class;
+                $this->assertSame($expected_class, $actual_class, $message);
+            }
+            // Check error list size.
+            $this->assertSameSize($expected_classes, $actual_errors);
+        }
     }
 }
