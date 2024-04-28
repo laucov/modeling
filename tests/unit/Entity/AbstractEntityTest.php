@@ -42,6 +42,42 @@ use PHPUnit\Framework\TestCase;
 class AbstractEntityTest extends TestCase
 {
     /**
+     * @covers ::cacheRules
+     * @covers ::getRuleset
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getProperties
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getPropertyNames
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getRuleset
+     * @uses Laucov\Modeling\Entity\AbstractEntity::validate
+     */
+    public function testCachesRules(): void
+    {
+        // Create entity.
+        $entity = new class () extends AbstractEntity {
+            public static int $cacheCount = 0;
+            #[Regex('/^\d+\-\d+$/')]
+            public string $zip_code;
+            #[Regex('/^[A-Z]+$/')]
+            #[Length(3, 3)]
+            public string $country;
+            protected function cacheRules(): void
+            {
+                static::$cacheCount++;
+                parent::cacheRules();
+            }
+        };
+
+        // Test caching.
+        $entity->validate();
+        $entity->validate();
+        $entity->validate();
+        $entity->validate();
+        $entity->validate();
+        $entity->validate();
+        $this->assertSame(1, $entity::class::$cacheCount);
+    }
+
+    /**
      * @covers ::cache
      * @covers ::getEntries
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
@@ -105,15 +141,15 @@ class AbstractEntityTest extends TestCase
 
     /**
      * @covers ::__construct
-     * @covers ::cacheRules
      * @covers ::hasErrors
      * @covers ::getErrorKeys
      * @covers ::getErrors
      * @covers ::getProperties
      * @covers ::getPropertyNames
-     * @covers ::getRuleset
      * @covers ::validate
      * @uses Laucov\Modeling\Entity\AbstractEntity::cache
+     * @uses Laucov\Modeling\Entity\AbstractEntity::cacheRules
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getRuleset
      * @uses Laucov\Modeling\Entity\AbstractEntity::toArray
      * @uses Laucov\Modeling\Entity\ObjectReader::toArray
      * @uses Laucov\Validation\Rules\Length::__construct

@@ -71,12 +71,7 @@ abstract class AbstractEntity
      * 
      * @var array<string, Ruleset>
      */
-    protected array $rules = [];
-
-    /**
-     * Whether rules are already cached.
-     */
-    protected bool $rulesAreCached = false;
+    protected array $rules;
 
     /**
      * Create the entity instance.
@@ -218,7 +213,7 @@ abstract class AbstractEntity
      */
     protected function getPropertyNames(): array
     {
-        // Cache names.
+        // Cache property names.
         if (!isset($this->propertyNames)) {
             $props = $this->getProperties();
             $this->propertyNames = array_map(fn ($p) => $p->getName(), $props);
@@ -233,7 +228,7 @@ abstract class AbstractEntity
     protected function getRuleset(string $property_name): Ruleset
     {
         // Cache rules.
-        if (!$this->rulesAreCached) {
+        if (!isset($this->rules)) {
             $this->cacheRules();
         }
 
