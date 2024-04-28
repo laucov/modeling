@@ -27,6 +27,7 @@
  */
 
 namespace Laucov\Modeling\Migration;
+
 use Laucov\Db\Data\Connection;
 use Laucov\Db\Query\Schema;
 use Laucov\Db\Query\Table;
@@ -90,7 +91,7 @@ class Migrator
             ->filter('index', '>', $to_index)
             ->sort('index', true)
             ->selectRecords(Migration::class);
-        
+
         // Downgrade all found migrations.
         foreach ($records as $record) {
             $file = new MigrationFile($record->filename, $record->time_format);
@@ -125,7 +126,7 @@ class Migrator
             ->sort('index', true)
             ->limit(1)
             ->selectRecords(Migration::class);
-        
+
         return $records[0] ?? null;
     }
 
@@ -149,7 +150,7 @@ class Migrator
             ->filter('batch', '>', $to_batch)
             ->sort('index', true)
             ->selectRecords(Migration::class);
-        
+
         // Downgrade all found migrations.
         foreach ($records as $record) {
             $file = new MigrationFile($record->filename, $record->time_format);

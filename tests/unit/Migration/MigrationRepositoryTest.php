@@ -60,7 +60,7 @@ class MigrationRepositoryTest extends TestCase
             // Use custom date formats.
             ->addFile("{$dir}/20230331_103200-CreateUsersTable.php", 'Ymd_His')
             ->addDirectory("{$dir}/dir-b/", 'YmdHis');
-        
+
         // List all migrations.
         $list = $repo->listFiles();
         $this->assertIsArray($list);

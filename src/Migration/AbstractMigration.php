@@ -56,10 +56,10 @@ abstract class AbstractMigration
     /**
      * Execute the migration's downgrade procedure.
      */
-    public abstract function downgrade(): void;
+    abstract public function downgrade(): void;
 
     /**
      * Execute the migration's upgrade procedure.
      */
-    public abstract function upgrade(): void;
+    abstract public function upgrade(): void;
 }

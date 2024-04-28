@@ -49,7 +49,7 @@ class MigrationFileTest extends TestCase
         $filename = "{$directory}/2023-03-31-105000-CreateFlightsTable.php";
         $format = 'Y-m-d-His';
         $migration = new MigrationFile($filename, $format);
-        
+
         // Get filename, name and datetime.
         $this->assertSame($filename, $migration->filename);
         $this->assertSame($format, $migration->timeFormat);

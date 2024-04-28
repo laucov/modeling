@@ -51,7 +51,7 @@ abstract class AbstractEntity
      * @var array<string, RuleInterface[]>
      */
     protected array $errors = [];
-    
+
     /**
      * Reflection properties.
      * 

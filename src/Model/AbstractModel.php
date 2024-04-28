@@ -263,7 +263,7 @@ abstract class AbstractModel
             $this->selecting[] = $this->primaryKey;
         }
 
-        // Get records.        
+        // Get records.
         $this->table->filter($this->primaryKey, '=', $ids);
         $records = $this->getEntities();
 

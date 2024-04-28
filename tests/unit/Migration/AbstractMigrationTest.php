@@ -52,8 +52,7 @@ class AbstractMigrationTest extends TestCase
         $conn = new Connection($drivers, 'sqlite::memory:');
 
         // Create a migration.
-        $migration = new class ($conn) extends AbstractMigration
-        {
+        $migration = new class ($conn) extends AbstractMigration {
             public function upgrade(): void
             {
                 $this->schema->createTable(

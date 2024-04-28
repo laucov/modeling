@@ -259,7 +259,7 @@ final class MigratorTest extends TestCase
             ->addDirectory("{$directory}/dir-b", 'YmdHis')
             ->addFile("{$directory}/2023-03-31-105000-CreateFlightsTable.php", 'Y-m-d-His')
             ->addFile("{$directory}/20230331_103200-CreateUsersTable.php", 'Ymd_His');
-        
+
         // Create migrator.
         $this->migrator = new Migrator($this->repo, $this->conn, 'migrations');
     }

@@ -411,8 +411,7 @@ class AbstractModelTest extends TestCase
     public function testFailsIfRetrievesDuplicatedEntries(): void
     {
         // Create model with faulty primary key.
-        $model = new class ($this->conn) extends AirplaneModel
-        {
+        $model = new class ($this->conn) extends AirplaneModel {
             protected string $primaryKey = 'model';
         };
 
@@ -436,8 +435,7 @@ class AbstractModelTest extends TestCase
         array $faulty_ids,
     ): void {
         // Create model with faulty primary key.
-        $model = new class ($this->conn) extends AirplaneModel
-        {
+        $model = new class ($this->conn) extends AirplaneModel {
             protected string $primaryKey = 'model';
         };
 
@@ -468,8 +466,7 @@ class AbstractModelTest extends TestCase
         // Create custom model.
         // Use AirplaneWithSetter to track unused fetched columns.
         /** @var AbstractModel<AirplaneWithSetter> */
-        $model = new class ($this->conn) extends AbstractModel
-        {
+        $model = new class ($this->conn) extends AbstractModel {
             protected string $entityName = AirplaneWithSetter::class;
             protected string $primaryKey = 'id';
             protected string $tableName = 'airplanes';
