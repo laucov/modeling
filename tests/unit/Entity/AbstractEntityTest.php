@@ -31,10 +31,9 @@ declare(strict_types=1);
 namespace Tests\Unit\Entity;
 
 use Laucov\Modeling\Entity\AbstractEntity;
+use Laucov\Modeling\Entity\Required;
 use Laucov\Validation\Rules\Length;
 use Laucov\Validation\Rules\Regex;
-use Laucov\Validation\Rules\Required;
-use Laucov\Validation\Rules\RequiredWith;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -50,12 +49,14 @@ class AbstractEntityTest extends TestCase
      * @uses Laucov\Modeling\Entity\AbstractEntity::getPropertyNames
      * @uses Laucov\Modeling\Entity\AbstractEntity::getRuleset
      * @uses Laucov\Modeling\Entity\AbstractEntity::validate
+     * @uses Laucov\Modeling\Entity\Required::__construct
      */
     public function testCachesRules(): void
     {
         // Create entity.
         $entity = new class () extends AbstractEntity {
             public static int $cacheCount = 0;
+            #[Required]
             #[Regex('/^\d+\-\d+$/')]
             public string $zip_code;
             #[Regex('/^[A-Z]+$/')]
@@ -153,6 +154,7 @@ class AbstractEntityTest extends TestCase
      * @uses Laucov\Modeling\Entity\AbstractEntity::getRuleset
      * @uses Laucov\Modeling\Entity\AbstractEntity::toArray
      * @uses Laucov\Modeling\Entity\ObjectReader::toArray
+     * @uses Laucov\Modeling\Entity\Required::__construct
      * @uses Laucov\Validation\Rules\Length::__construct
      * @uses Laucov\Validation\Rules\Length::validate
      * @uses Laucov\Validation\Rules\Regex::__construct
@@ -174,7 +176,7 @@ class AbstractEntityTest extends TestCase
             #[Regex('/[\!\#\$\%\&\@]+/')]
             public string $password;
             public bool $has_email;
-            #[RequiredWith('has_email')]
+            #[Required(['has_email'])]
             public string $email;
         };
 
@@ -205,7 +207,7 @@ class AbstractEntityTest extends TestCase
 
         // Test context data.
         $entity->has_email = true;
-        $this->assertValidation($entity, ['email' => [RequiredWith::class]]);
+        $this->assertValidation($entity, ['email' => ['required_with']]);
     }
 
     /**
@@ -235,6 +237,7 @@ class AbstractEntityTest extends TestCase
      * @uses Laucov\Modeling\Entity\AbstractEntity::getPropertyNames
      * @uses Laucov\Modeling\Entity\AbstractEntity::getRuleset
      * @uses Laucov\Modeling\Entity\AbstractEntity::hasErrors
+     * @uses Laucov\Modeling\Entity\Required::__construct
      */
     public function testValidatesUnsetProperties(): void
     {
@@ -242,14 +245,14 @@ class AbstractEntityTest extends TestCase
         $entity = new class () extends AbstractEntity {
             #[Required]
             public string $first_name;
-            #[Length(8, 128)]
+            #[Required]
             public string $last_name;
         };
 
         // Validate.
         $this->assertValidation($entity, [
-            'first_name' => [Required::class],
-            'last_name' => [Length::class],
+            'first_name' => ['required'],
+            'last_name' => ['required'],
         ]);
     }
 
@@ -279,15 +282,15 @@ class AbstractEntityTest extends TestCase
         // Check error keys.
         $expected_keys = array_keys($expected_errors);
         $actual_keys = $entity->getErrorKeys();
-        $unexpected = array_diff($actual_keys, $expected_keys);
-        if (count($unexpected) > 0) {
-            $message = 'Missing entity error keys: %s.';
-            $this->fail(sprintf($message, implode(', ', $unexpected)));
-        }
         $missing = array_diff($expected_keys, $actual_keys);
         if (count($missing) > 0) {
-            $message = 'Found unexpected entity error keys: %s.';
+            $message = 'Missing entity error keys: %s.';
             $this->fail(sprintf($message, implode(', ', $missing)));
+        }
+        $unexpected = array_diff($actual_keys, $expected_keys);
+        if (count($unexpected) > 0) {
+            $message = 'Found unexpected entity error keys: %s.';
+            $this->fail(sprintf($message, implode(', ', $unexpected)));
         }
 
         // Get public property names.
@@ -312,10 +315,10 @@ class AbstractEntityTest extends TestCase
         foreach ($expected_errors as $name => $expected_classes) {
             $actual_errors = $entity->getErrors($name);
             $this->assertIsArray($actual_errors);
-            $msg_tpl = 'Assert that entity property "%s" #%s error is a %s.';
+            $msg_tpl = 'Assert that entity property "%s" #%s error is %s.';
             foreach ($expected_classes as $i => $expected_class) {
                 $message = sprintf($msg_tpl, $name, $i, $expected_class);
-                $actual_class = $actual_errors[$i]::class;
+                $actual_class = $actual_errors[$i]->rule;
                 $this->assertSame($expected_class, $actual_class, $message);
             }
             // Check error list size.

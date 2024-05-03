@@ -39,6 +39,22 @@ use PHPUnit\Framework\TestCase;
 class RequiredTest extends TestCase
 {
     /**
+     * @covers ::__construct
+     */
+    public function testCanInstantiate(): void
+    {
+        // Create instance.
+        $instance = new Required(['prop_a', 'prop_b']);
+
+        // Check info.
+        $this->assertIsArray($instance->with);
+        $this->assertContainsOnly('string', $instance->with);
+        $this->assertCount(2, $instance->with);
+        $this->assertSame('prop_a', $instance->with[0]);
+        $this->assertSame('prop_b', $instance->with[1]);
+    }
+
+    /**
      * @coversNothing
      */
     public function testCanUseAsAttribute(): void
@@ -49,5 +65,14 @@ class RequiredTest extends TestCase
             #[Required]
             public $a = 'foo';
         };
+    }
+
+    /**
+     * @covers ::__construct
+     */
+    public function testMustInstantiateWithStringArray(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        new Required(['abc', ['invalid_arg']]);
     }
 }

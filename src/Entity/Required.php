@@ -34,4 +34,25 @@ namespace Laucov\Modeling\Entity;
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
 class Required
 {
+    /**
+     * Properties that must be present to require the value.
+     * 
+     * @var array<string>
+     */
+    public array $with;
+
+    /**
+     * Create the attribute instance.
+     */
+    public function __construct(array $with = [])
+    {
+        foreach ($with as $name) {
+            if (!is_string($name)) {
+                $message = 'All property names must be strings.';
+                throw new \InvalidArgumentException($message);
+            }
+        }
+
+        $this->with = $with;
+    }
 }

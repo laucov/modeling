@@ -28,6 +28,8 @@
 
 namespace Laucov\Modeling\Entity;
 
+use Laucov\Modeling\Entity\Required;
+use Laucov\Validation\Error;
 use Laucov\Validation\Interfaces\RuleInterface;
 use Laucov\Validation\Ruleset;
 
@@ -120,7 +122,7 @@ abstract class AbstractEntity
     /**
      * Get current errors.
      * 
-     * @return array<RuleInterface>
+     * @return array<Error>
      */
     public function getErrors(string $property_name): array
     {
@@ -179,6 +181,16 @@ abstract class AbstractEntity
             $ruleset = new Ruleset();
             $ruleset->setData($this);
             $this->rules[$name] = $ruleset;
+            // Check if is required.
+            /** @var null|\ReflectionAttribute */
+            $attribute = $prop->getAttributes(Required::class)[0] ?? null;
+            if ($attribute !== null) {
+                /** @var Required */
+                $required = $attribute->newInstance();
+                $ruleset
+                    ->require(count($required->with) === 0)
+                    ->requireWith(...$required->with);
+            }
             // Get attributes and add each rule.
             /** @var \ReflectionAttribute[] */
             $attributes = $prop->getAttributes(
