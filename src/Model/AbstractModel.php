@@ -219,13 +219,24 @@ abstract class AbstractModel
     }
 
     /**
-     * Join a one-to-one relationship.
+     * Fetch related records as a one-to-many relationship in the next query.
+     */
+    protected function relateOneToMany(
+        string $table_name,
+        string $left_key,
+        string $right_key,
+    ): void
+    {
+    }
+
+    /**
+     * Join a one-to-one or many-to-one relationship.
      * 
      * @param $table_name Table to join.
      * @param $left_key Root table key.
      * @param $right_key Joined table key.
      */
-    protected function joinToOne(
+    protected function relateOneToOne(
         string $table_name,
         string $left_key,
         string $right_key,

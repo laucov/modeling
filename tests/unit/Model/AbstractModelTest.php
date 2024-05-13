@@ -119,6 +119,117 @@ class AbstractModelTest extends TestCase
     }
 
     /**
+     * @covers ::relateOneToMany
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::getEntities
+     * @uses Laucov\Modeling\Model\AbstractModel::getEntity
+     * @uses Laucov\Modeling\Model\AbstractModel::prefix
+     * @uses Laucov\Modeling\Model\AbstractModel::retrieve
+     */
+    public function testFetchOneToManyRelationships(): void
+    {
+        // Create extra tables.
+        $this->createFlightsTable();
+
+        // Retrieve without flights.
+        $entity = $this->model->retrieve('3');
+        $this->assertNull($entity->getFlights());
+
+        // Retrieve with flight.
+        $entity = $this->model
+            ->withFlights()
+            ->retrieve('3');
+        // @todo $this->assertIsObject($entity->getFlights());
+    }
+
+    /**
+     * @covers ::relateOneToOne
+     * @covers ::prefix
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__set
+     * @uses Laucov\Modeling\Model\AbstractModel::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::getEntities
+     * @uses Laucov\Modeling\Model\AbstractModel::getEntity
+     * @uses Laucov\Modeling\Model\AbstractModel::list
+     * @uses Laucov\Modeling\Model\AbstractModel::listAll
+     * @uses Laucov\Modeling\Model\AbstractModel::resetPagination
+     * @uses Laucov\Modeling\Model\AbstractModel::retrieve
+     * @uses Laucov\Modeling\Model\AbstractModel::sort
+     * @uses Laucov\Modeling\Model\Collection::__construct
+     * @uses Laucov\Modeling\Model\Collection::current
+     * @uses Laucov\Modeling\Model\Collection::get
+     * @uses Laucov\Modeling\Model\Collection::next
+     * @uses Laucov\Modeling\Model\Collection::rewind
+     * @uses Laucov\Modeling\Model\Collection::valid
+     */
+    public function testCanFetchOneToOneRelationships(): void
+    {
+        // Set the new entity class.
+        $model = new class ($this->conn) extends AirplaneModel {
+            protected string $entityName = AirplaneWithNotes::class;
+        };
+
+        // Create extra tables.
+        $this->createAirplanesInfoTable();
+
+        // Retrieve without joining notes.
+        /** @var AirplaneWithNotes */
+        $airplane = $model->retrieve('4');
+        $this->assertNull($airplane->notes ?? null);
+
+        // Retrieve joining notes.
+        /** @var AirplaneWithNotes */
+        $airplane = $model
+            ->withNotes()
+            ->retrieve('4');
+        $this->assertSame('Nothing to add.', $airplane->notes);
+
+        // List without joining notes (one-to-one).
+        /** @var Collection<AirplaneWithNotes> */
+        $collection = $model->listAll();
+        foreach ($collection as $entity) {
+            $this->assertNull($entity->notes ?? null);
+        }
+
+        // Set a list of expected notes.
+        $expected_notes = [
+            1 => 'Very cool plane!',
+            2 => 'Flying for 3 years.',
+            4 => 'Nothing to add.',
+            6 => 'This is a note.',
+        ];
+
+        // List joining notes (one-to-one).
+        /** @var Collection<AirplaneWithNotes> */
+        $collection = $model
+            ->withNotes()
+            ->listAll();
+        foreach ($collection as $entity) {
+            $id = $entity->id;
+            if (array_key_exists($id, $expected_notes)) {
+                $this->assertSame($expected_notes[$id], $entity->notes);
+            } else {
+                $this->assertNull($entity->notes ?? null);
+            }
+        }
+
+        // Test sorting after joining notes (one-to-one).
+        /** @var Collection<AirplaneWithNotes> */
+        $collection = $model
+            ->withNotes()
+            ->sort('notes', true)
+            ->listAll();
+        $this->assertSame(1, $collection->get(0)->id);
+        $this->assertSame(6, $collection->get(1)->id);
+        $this->assertSame(4, $collection->get(2)->id);
+        $this->assertSame(2, $collection->get(3)->id);
+        $this->assertNull($collection->get(4)->notes);
+    }
+
+    /**
      * @covers ::insert
      * @covers ::insertBatch
      * @covers ::update
@@ -227,91 +338,6 @@ class AbstractModelTest extends TestCase
             ->withValue('model', 'A320-271N')
             ->updateBatch('3', '12', '56');
         $this->assertSame(BatchUpdateResult::NOT_FOUND, $update);
-    }
-
-    /**
-     * @covers ::joinToOne
-     * @covers ::prefix
-     * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
-     * @uses Laucov\Modeling\Entity\AbstractEntity::__set
-     * @uses Laucov\Modeling\Model\AbstractModel::__construct
-     * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
-     * @uses Laucov\Modeling\Model\AbstractModel::getEntities
-     * @uses Laucov\Modeling\Model\AbstractModel::getEntity
-     * @uses Laucov\Modeling\Model\AbstractModel::list
-     * @uses Laucov\Modeling\Model\AbstractModel::listAll
-     * @uses Laucov\Modeling\Model\AbstractModel::resetPagination
-     * @uses Laucov\Modeling\Model\AbstractModel::retrieve
-     * @uses Laucov\Modeling\Model\AbstractModel::sort
-     * @uses Laucov\Modeling\Model\Collection::__construct
-     * @uses Laucov\Modeling\Model\Collection::current
-     * @uses Laucov\Modeling\Model\Collection::get
-     * @uses Laucov\Modeling\Model\Collection::next
-     * @uses Laucov\Modeling\Model\Collection::rewind
-     * @uses Laucov\Modeling\Model\Collection::valid
-     */
-    public function testCanJoinRelationships(): void
-    {
-        // Set the new entity class.
-        $model = new class ($this->conn) extends AirplaneModel {
-            protected string $entityName = AirplaneWithNotes::class;
-        };
-
-        // Create extra tables.
-        $this->createAirplanesInfoTable();
-
-        // Retrieve without joining notes.
-        /** @var AirplaneWithNotes */
-        $airplane = $model->retrieve('4');
-        $this->assertNull($airplane->notes ?? null);
-
-        // Retrieve joining notes.
-        /** @var AirplaneWithNotes */
-        $airplane = $model
-            ->withNotes()
-            ->retrieve('4');
-        $this->assertSame('Nothing to add.', $airplane->notes);
-
-        // List without joining notes.
-        /** @var Collection<AirplaneWithNotes> */
-        $collection = $model->listAll();
-        foreach ($collection as $entity) {
-            $this->assertNull($entity->notes ?? null);
-        }
-
-        // Set a list of expected notes.
-        $expected_notes = [
-            1 => 'Very cool plane!',
-            2 => 'Flying for 3 years.',
-            4 => 'Nothing to add.',
-            6 => 'This is a note.',
-        ];
-
-        // List joining notes.
-        /** @var Collection<AirplaneWithNotes> */
-        $collection = $model
-            ->withNotes()
-            ->listAll();
-        foreach ($collection as $entity) {
-            $id = $entity->id;
-            if (array_key_exists($id, $expected_notes)) {
-                $this->assertSame($expected_notes[$id], $entity->notes);
-            } else {
-                $this->assertNull($entity->notes ?? null);
-            }
-        }
-
-        // Test other
-        /** @var Collection<AirplaneWithNotes> */
-        $collection = $model
-            ->withNotes()
-            ->sort('notes', true)
-            ->listAll();
-        $this->assertSame(1, $collection->get(0)->id);
-        $this->assertSame(6, $collection->get(1)->id);
-        $this->assertSame(4, $collection->get(2)->id);
-        $this->assertSame(2, $collection->get(3)->id);
-        $this->assertNull($collection->get(4)->notes);
     }
 
     /**
@@ -650,36 +676,36 @@ class AbstractModelTest extends TestCase
             SQL);
     }
 
-    // /**
-    //  * Create a table for flights.
-    //  */
-    // protected function createFlightsTable(): void
-    // {
-    //     $this->conn
-    //         ->query(<<<SQL
-    //             CREATE TABLE "flights" (
-    //                 "id" INTEGER PRIMARY KEY,
-    //                 "airplane_id" INT(11),
-    //                 "origin" VARCHAR(3),
-    //                 "destination" VARCHAR(3),
-    //                 "deleted_at" DATETIME
-    //             )
-    //             SQL)
-    //         ->query(<<<SQL
-    //             INSERT INTO "flights"
-    //                 ("airplane_id", "origin", "destination")
-    //             VALUES
-    //                 (1, 'GIG', 'FLN'),
-    //                 (3, 'VCP', 'FLN'),
-    //                 (10, 'VCP', 'LDB'),
-    //                 (3, 'CNF', 'VCP'),
-    //                 (2, 'GRU', 'MOC'),
-    //                 (3, 'GRU', 'BOG'),
-    //                 (9, 'PLU', NULL)
-    //                 (10, 'CNF', 'UDI')
-    //                 (1, 'SSA', 'GRU'),
-    //         SQL);
-    // }
+    /**
+     * Create a table for flights.
+     */
+    protected function createFlightsTable(): void
+    {
+        $this->conn
+            ->query(<<<SQL
+                CREATE TABLE "flights" (
+                    "id" INTEGER PRIMARY KEY,
+                    "airplane_id" INT(11),
+                    "origin" VARCHAR(3),
+                    "destination" VARCHAR(3),
+                    "deleted_at" DATETIME
+                )
+                SQL)
+            ->query(<<<SQL
+                INSERT INTO "flights"
+                    ("airplane_id", "origin", "destination")
+                VALUES
+                    (1, 'GIG', 'FLN'),
+                    (3, 'VCP', 'FLN'),
+                    (10, 'VCP', 'LDB'),
+                    (3, 'CNF', 'VCP'),
+                    (2, 'GRU', 'MOC'),
+                    (3, 'GRU', 'BOG'),
+                    (9, 'PLU', NULL),
+                    (10, 'CNF', 'UDI'),
+                    (1, 'SSA', 'GRU')
+            SQL);
+    }
 
     protected function setUp(): void
     {
@@ -728,6 +754,12 @@ class Airplane extends AbstractEntity
     public string $registration;
     public string $manufacturer;
     public string $model;
+    protected null|Collection $flights = null;
+    /** @return null|Collection<Flight> */
+    public function getFlights(): mixed
+    {
+        return $this->flights;
+    }
 }
 
 /**
@@ -748,9 +780,14 @@ class AirplaneModel extends AbstractModel
     protected string $entityName = Airplane::class;
     protected string $primaryKey = 'id';
     protected string $tableName = 'airplanes';
+    public function withFlights(): static
+    {
+        $this->relateOneToMany('flights', 'id', 'airplane_id');
+        return $this;
+    }
     public function withNotes(): static
     {
-        $this->joinToOne('airplanes_notes', 'id', 'airplane_id');
+        $this->relateOneToOne('airplanes_notes', 'id', 'airplane_id');
         return $this;
     }
 }
@@ -786,12 +823,12 @@ class FaultyModel extends AbstractModel
     protected string $tableName = 'airplanes';
 }
 
-// /**
-//  * Test entity that represents an flight.
-//  */
-// class Flight
-// {
-//     public int $id;
-//     public string $origin;
-//     public string $destination;
-// }
+/**
+ * Test entity that represents an flight.
+ */
+class Flight
+{
+    public int $id;
+    public null|string $origin;
+    public null|string $destination;
+}
