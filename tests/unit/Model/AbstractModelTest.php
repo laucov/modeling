@@ -72,6 +72,7 @@ class AbstractModelTest extends TestCase
      * @covers ::exists
      * @covers ::filterDeleted
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
     public function testCanDeleteAndErase(): void
     {
@@ -136,6 +137,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
+     * @uses Laucov\Modeling\Model\AbstractModel::prefix
      * @uses Laucov\Modeling\Model\AbstractModel::retrieve
      * @uses Laucov\Modeling\Model\AbstractModel::retrieveBatch
      * @uses Laucov\Modeling\Entity\ObjectReader::count
@@ -228,6 +230,91 @@ class AbstractModelTest extends TestCase
     }
 
     /**
+     * @covers ::joinToOne
+     * @covers ::prefix
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__set
+     * @uses Laucov\Modeling\Model\AbstractModel::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::getEntities
+     * @uses Laucov\Modeling\Model\AbstractModel::getEntity
+     * @uses Laucov\Modeling\Model\AbstractModel::list
+     * @uses Laucov\Modeling\Model\AbstractModel::listAll
+     * @uses Laucov\Modeling\Model\AbstractModel::resetPagination
+     * @uses Laucov\Modeling\Model\AbstractModel::retrieve
+     * @uses Laucov\Modeling\Model\AbstractModel::sort
+     * @uses Laucov\Modeling\Model\Collection::__construct
+     * @uses Laucov\Modeling\Model\Collection::current
+     * @uses Laucov\Modeling\Model\Collection::get
+     * @uses Laucov\Modeling\Model\Collection::next
+     * @uses Laucov\Modeling\Model\Collection::rewind
+     * @uses Laucov\Modeling\Model\Collection::valid
+     */
+    public function testCanJoinRelationships(): void
+    {
+        // Set the new entity class.
+        $model = new class ($this->conn) extends AirplaneModel {
+            protected string $entityName = AirplaneWithNotes::class;
+        };
+
+        // Create extra tables.
+        $this->createAirplanesInfoTable();
+
+        // Retrieve without joining notes.
+        /** @var AirplaneWithNotes */
+        $airplane = $model->retrieve('4');
+        $this->assertNull($airplane->notes ?? null);
+
+        // Retrieve joining notes.
+        /** @var AirplaneWithNotes */
+        $airplane = $model
+            ->withNotes()
+            ->retrieve('4');
+        $this->assertSame('Nothing to add.', $airplane->notes);
+
+        // List without joining notes.
+        /** @var Collection<AirplaneWithNotes> */
+        $collection = $model->listAll();
+        foreach ($collection as $entity) {
+            $this->assertNull($entity->notes ?? null);
+        }
+
+        // Set a list of expected notes.
+        $expected_notes = [
+            1 => 'Very cool plane!',
+            2 => 'Flying for 3 years.',
+            4 => 'Nothing to add.',
+            6 => 'This is a note.',
+        ];
+
+        // List joining notes.
+        /** @var Collection<AirplaneWithNotes> */
+        $collection = $model
+            ->withNotes()
+            ->listAll();
+        foreach ($collection as $entity) {
+            $id = $entity->id;
+            if (array_key_exists($id, $expected_notes)) {
+                $this->assertSame($expected_notes[$id], $entity->notes);
+            } else {
+                $this->assertNull($entity->notes ?? null);
+            }
+        }
+
+        // Test other
+        /** @var Collection<AirplaneWithNotes> */
+        $collection = $model
+            ->withNotes()
+            ->sort('notes', true)
+            ->listAll();
+        $this->assertSame(1, $collection->get(0)->id);
+        $this->assertSame(6, $collection->get(1)->id);
+        $this->assertSame(4, $collection->get(2)->id);
+        $this->assertSame(2, $collection->get(3)->id);
+        $this->assertNull($collection->get(4)->notes);
+    }
+
+    /**
      * @covers ::__construct
      * @covers ::getEntities
      * @covers ::list
@@ -235,6 +322,7 @@ class AbstractModelTest extends TestCase
      * @covers ::paginate
      * @covers ::resetPagination
      * @covers ::sort
+     * @uses Laucov\Modeling\Model\AbstractModel::prefix
      * @uses Laucov\Modeling\Model\Collection::__construct
      * @uses Laucov\Modeling\Model\Collection::count
      * @uses Laucov\Modeling\Model\Collection::current
@@ -330,6 +418,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
+     * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
     public function testCanRetrieve(): void
     {
@@ -406,6 +495,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
+     * @uses Laucov\Modeling\Model\AbstractModel::prefix
      * @uses Laucov\Modeling\Model\AbstractModel::retrieve
      */
     public function testFailsIfRetrievesDuplicatedEntries(): void
@@ -428,6 +518,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
+     * @uses Laucov\Modeling\Model\AbstractModel::prefix
      * @dataProvider duplicatedAirplaneModelRetrievalProvider
      */
     public function testFailsIfRetrievesBatchesWithDuplicatedEntries(
@@ -456,6 +547,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::list
      * @uses Laucov\Modeling\Model\AbstractModel::listAll
      * @uses Laucov\Modeling\Model\AbstractModel::paginate
+     * @uses Laucov\Modeling\Model\AbstractModel::prefix
      * @uses Laucov\Modeling\Model\AbstractModel::resetPagination
      * @uses Laucov\Modeling\Model\AbstractModel::retrieve
      * @uses Laucov\Modeling\Model\Collection::__construct
@@ -532,6 +624,63 @@ class AbstractModelTest extends TestCase
         $this->assertCount(0, $entity->getUnusedColumns());
     }
 
+    /**
+     * Create a table for airplane info entries.
+     */
+    protected function createAirplanesInfoTable(): void
+    {
+        $this->conn
+            ->query(<<<SQL
+                CREATE TABLE "airplanes_notes" (
+                    "id" INTEGER PRIMARY KEY,
+                    "airplane_id" INT(11),
+                    "notes" VARCHAR(256),
+                    "deleted_at" DATETIME
+                )
+                SQL)
+            ->query(<<<SQL
+                INSERT INTO "airplanes_notes"
+                    ("airplane_id", "notes", "deleted_at")
+                VALUES
+                    (1, 'Very cool plane!', null),
+                    (2, 'Flying for 3 years.', null),
+                    (4, 'Something to add.', '2024-01-01 01:00:00'),
+                    (4, 'Nothing to add.', null),
+                    (6, 'This is a note.', null)
+            SQL);
+    }
+
+    // /**
+    //  * Create a table for flights.
+    //  */
+    // protected function createFlightsTable(): void
+    // {
+    //     $this->conn
+    //         ->query(<<<SQL
+    //             CREATE TABLE "flights" (
+    //                 "id" INTEGER PRIMARY KEY,
+    //                 "airplane_id" INT(11),
+    //                 "origin" VARCHAR(3),
+    //                 "destination" VARCHAR(3),
+    //                 "deleted_at" DATETIME
+    //             )
+    //             SQL)
+    //         ->query(<<<SQL
+    //             INSERT INTO "flights"
+    //                 ("airplane_id", "origin", "destination")
+    //             VALUES
+    //                 (1, 'GIG', 'FLN'),
+    //                 (3, 'VCP', 'FLN'),
+    //                 (10, 'VCP', 'LDB'),
+    //                 (3, 'CNF', 'VCP'),
+    //                 (2, 'GRU', 'MOC'),
+    //                 (3, 'GRU', 'BOG'),
+    //                 (9, 'PLU', NULL)
+    //                 (10, 'CNF', 'UDI')
+    //                 (1, 'SSA', 'GRU'),
+    //         SQL);
+    // }
+
     protected function setUp(): void
     {
         // Create connection instance and table.
@@ -569,6 +718,9 @@ class AbstractModelTest extends TestCase
     }
 }
 
+/**
+ * Test entity that represents an airplane.
+ */
 class Airplane extends AbstractEntity
 {
     public int $id;
@@ -579,6 +731,16 @@ class Airplane extends AbstractEntity
 }
 
 /**
+ * Test entity that represents an airplane with an extra field "notes".
+ */
+class AirplaneWithNotes extends Airplane
+{
+    public null|string $notes;
+}
+
+/**
+ * Test model that provides `Airplane` instances.
+ * 
  * @extends AbstractModel<Airplane>
  */
 class AirplaneModel extends AbstractModel
@@ -586,8 +748,16 @@ class AirplaneModel extends AbstractModel
     protected string $entityName = Airplane::class;
     protected string $primaryKey = 'id';
     protected string $tableName = 'airplanes';
+    public function withNotes(): static
+    {
+        $this->joinToOne('airplanes_notes', 'id', 'airplane_id');
+        return $this;
+    }
 }
 
+/**
+ * Extension of `Airplane` that catches unused values.
+ */
 class AirplaneWithSetter extends Airplane
 {
     protected array $unusedColumns = [];
@@ -615,3 +785,13 @@ class FaultyModel extends AbstractModel
     protected string $primaryKey = 'model';
     protected string $tableName = 'airplanes';
 }
+
+// /**
+//  * Test entity that represents an flight.
+//  */
+// class Flight
+// {
+//     public int $id;
+//     public string $origin;
+//     public string $destination;
+// }

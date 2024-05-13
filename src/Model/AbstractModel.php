@@ -121,6 +121,11 @@ abstract class AbstractModel
         $this->table = new Table($connection, $this->tableName);
         // Store entity's key names.
         $this->entityKeys = array_keys(get_class_vars($this->entityName));
+        array_walk($this->entityKeys, function (&$key) {
+            if ($key === $this->primaryKey) {
+                $key = $this->prefix($key);
+            }
+        });
     }
 
     /**
@@ -214,6 +219,29 @@ abstract class AbstractModel
     }
 
     /**
+     * Join a one-to-one relationship.
+     * 
+     * @param $table_name Table to join.
+     * @param $left_key Root table key.
+     * @param $right_key Joined table key.
+     */
+    protected function joinToOne(
+        string $table_name,
+        string $left_key,
+        string $right_key,
+    ): void {
+        // Prefix keys.
+        $left_key = $this->prefix($left_key);
+        $right_key = $this->prefix($right_key, $table_name);
+
+        // Join tables.
+        $this->table
+            ->join($table_name)
+            ->on($left_key, '=', $right_key)
+            ->on($this->prefix('deleted_at', $table_name), '=', null);
+    }
+
+    /**
      * List all records.
      * 
      * @return Collection<T>
@@ -242,7 +270,7 @@ abstract class AbstractModel
      */
     public function retrieve(string $id): mixed
     {
-        $this->table->filter($this->primaryKey, '=', $id);
+        $this->table->filter($this->prefix($this->primaryKey), '=', $id);
         return $this->getEntity();
     }
 
@@ -398,13 +426,13 @@ abstract class AbstractModel
         // Set constraints according to the filter mode.
         switch ($this->deletionFilter) {
             case DeletionFilter::HIDE:
-                $this->table->filter('deleted_at', '=', null);
+                $this->table->filter($this->prefix('deleted_at'), '=', null);
                 break;
             case DeletionFilter::SHOW:
                 // Do nothing.
                 break;
             case DeletionFilter::SHOW_EXCLUSIVELY:
-                $this->table->filter('deleted_at', '!=', null);
+                $this->table->filter($this->prefix('deleted_at'), '!=', null);
                 break;
         }
 
@@ -471,7 +499,8 @@ abstract class AbstractModel
 
         // Count all filtered records.
         $this->table->autoReset = false;
-        $filtered = $this->table->countRecords($this->primaryKey);
+        $primary_key = $this->prefix($this->primaryKey);
+        $filtered = $this->table->countRecords($primary_key);
 
         // Paginate.
         if ($this->pageLength !== null) {
@@ -501,6 +530,15 @@ abstract class AbstractModel
         $this->resetPagination();
 
         return $collection;
+    }
+
+    /**
+     * Prefix a column name.
+     */
+    protected function prefix(string $key, null|string $table = null): string
+    {
+        $table ??= $this->tableName;
+        return "{$table}.{$key}";
     }
 
     /**
