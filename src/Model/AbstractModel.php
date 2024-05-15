@@ -70,7 +70,7 @@ abstract class AbstractModel
      * 
      * @var array<array{class-string<AbstractModel>, string, string, callable}>
      */
-    protected array $oneToManyRelationships = [];
+    protected array $requestedRelationships = [];
 
     /**
      * Selected page length.
@@ -432,48 +432,50 @@ abstract class AbstractModel
     }
 
     /**
-     * Find and attach related records to the given entities.
+     * Find and append related records to the given entities.
      * 
      * @param array<T> $entities Entities to fetch related records.
      */
-    protected function attachOneToManyRelationships(array $entities): void
-    {
-        // Fetch and attach each relationship data.
-        foreach ($this->oneToManyRelationships as $relationship) {
-            // Extract arguments and get the model instance.
-            [$model_name, $left_key, $right_key, $callback] = $relationship;
-            $model = new $model_name($this->connection);
-            // Set model filters.
-            $values = array_map(fn ($e) => $e->{$left_key}, $entities);
-            $model->table->filter($right_key, '=', $values);
-            // Run callback.
-            if ($callback !== null) {
-                $callback($model);
-            }
-            // Check if necessery keys are selected.
-            if (
-                count($model->selecting) > 0
-                && !in_array($right_key, $model->selecting)
-            ) {
-                $model->selecting[] = $right_key;
-            }
-            // Fetch and group records.
-            $records = [];
-            foreach ($model->listAll() as $record) {
-                $records[$record->{$right_key}][] = $record;
-            }
-            // Attach records.
-            foreach ($entities as $entity) {
-                $related = $records[$entity->{$left_key}] ?? [];
-                $count = count($related);
-                $entity->{$model->tableName} = new Collection(
-                    1,
-                    $count,
-                    $count,
-                    $count,
-                    ...$related,
-                );
-            }
+    protected function fetchRelationship(
+        array $entities,
+        string $model_name,
+        string $left_key,
+        string $right_key,
+        null|callable $callback,
+    ): void {
+        // Extract arguments and get the model instance.
+        $model = new $model_name($this->connection);
+
+        // Set model filters.
+        $values = array_map(fn ($e) => $e->{$left_key}, $entities);
+        $model->table->filter($right_key, '=', $values);
+
+        // Run callback.
+        if ($callback !== null) {
+            $callback($model);
+        }
+
+        // Check if necessary keys are selected.
+        // The $right_key column is required for filtering.
+        if (
+            count($model->selecting) > 0
+            && !in_array($right_key, $model->selecting)
+        ) {
+            $model->selecting[] = $right_key;
+        }
+
+        // Fetch and group records.
+        $records = [];
+        foreach ($model->listAll() as $record) {
+            $records[$record->{$right_key}][] = $record;
+        }
+
+        // Attach records.
+        foreach ($entities as $entity) {
+            $related = $records[$entity->{$left_key}] ?? [];
+            $count = count($related);
+            $collection = new Collection(1, null, $count, $count, ...$related);
+            $entity->{$model->tableName} = $collection;
         }
     }
 
@@ -497,11 +499,13 @@ abstract class AbstractModel
         $this->applyDeletionFilter();
         $records = $this->table->selectRecords($this->entityName);
 
-        // Fetch related records.
-        if (count($this->oneToManyRelationships) > 0) {
-            $this->attachOneToManyRelationships($records);
+        // Query related records.
+        if (count($this->requestedRelationships) > 0) {
+            foreach ($this->requestedRelationships as $arguments) {
+                $this->fetchRelationship($records, ...$arguments);
+            }
         }
-        $this->oneToManyRelationships = [];
+        $this->requestedRelationships = [];
 
         return $records;
     }
@@ -591,7 +595,7 @@ abstract class AbstractModel
         string $right_key,
         null|callable $callback = null,
     ): void {
-        $this->oneToManyRelationships[] = [
+        $this->requestedRelationships[] = [
             $model_class_name,
             $left_key,
             $right_key,

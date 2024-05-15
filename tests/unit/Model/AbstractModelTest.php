@@ -137,7 +137,7 @@ class AbstractModelTest extends TestCase
     }
 
     /**
-     * @covers ::attachOneToManyRelationships
+     * @covers ::fetchRelationship
      * @covers ::getEntities
      * @covers ::relateOneToMany
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
