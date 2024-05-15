@@ -32,6 +32,7 @@ use Laucov\Db\Data\Connection;
 use Laucov\Db\Query\Table;
 use Laucov\Modeling\Entity\AbstractEntity;
 use Laucov\Modeling\Entity\ObjectReader;
+use Laucov\Modeling\Entity\Relationship;
 
 /**
  * Provides table data in form of entities and collections.
@@ -63,6 +64,13 @@ abstract class AbstractModel
      * @var class-string<T>
      */
     protected string $entityName;
+
+    /**
+     * One-to-many relationships.
+     * 
+     * @var array<array{class-string<AbstractModel>, string, string, callable}>
+     */
+    protected array $oneToManyRelationships = [];
 
     /**
      * Selected page length.
@@ -119,13 +127,17 @@ abstract class AbstractModel
     ) {
         // Store a table instance.
         $this->table = new Table($connection, $this->tableName);
+
         // Store entity's key names.
-        $this->entityKeys = array_keys(get_class_vars($this->entityName));
-        array_walk($this->entityKeys, function (&$key) {
-            if ($key === $this->primaryKey) {
-                $key = $this->prefix($key);
+        $this->entityKeys = [];
+        foreach (array_keys(get_class_vars($this->entityName)) as $key) {
+            $property = new \ReflectionProperty($this->entityName, $key);
+            if (count($property->getAttributes(Relationship::class)) === 0) {
+                $this->entityKeys[] = $key === $this->primaryKey
+                    ? $this->prefix($key)
+                    : $key;
             }
-        });
+        }
     }
 
     /**
@@ -216,40 +228,6 @@ abstract class AbstractModel
         $this->table->insertRecords(...$data);
 
         return true;
-    }
-
-    /**
-     * Fetch related records as a one-to-many relationship in the next query.
-     */
-    protected function relateOneToMany(
-        string $table_name,
-        string $left_key,
-        string $right_key,
-    ): void
-    {
-    }
-
-    /**
-     * Join a one-to-one or many-to-one relationship.
-     * 
-     * @param $table_name Table to join.
-     * @param $left_key Root table key.
-     * @param $right_key Joined table key.
-     */
-    protected function relateOneToOne(
-        string $table_name,
-        string $left_key,
-        string $right_key,
-    ): void {
-        // Prefix keys.
-        $left_key = $this->prefix($left_key);
-        $right_key = $this->prefix($right_key, $table_name);
-
-        // Join tables.
-        $this->table
-            ->join($table_name)
-            ->on($left_key, '=', $right_key)
-            ->on($this->prefix('deleted_at', $table_name), '=', null);
     }
 
     /**
@@ -454,6 +432,52 @@ abstract class AbstractModel
     }
 
     /**
+     * Find and attach related records to the given entities.
+     * 
+     * @param array<T> $entities Entities to fetch related records.
+     */
+    protected function attachOneToManyRelationships(array $entities): void
+    {
+        // Fetch and attach each relationship data.
+        foreach ($this->oneToManyRelationships as $relationship) {
+            // Extract arguments and get the model instance.
+            [$model_name, $left_key, $right_key, $callback] = $relationship;
+            $model = new $model_name($this->connection);
+            // Set model filters.
+            $values = array_map(fn ($e) => $e->{$left_key}, $entities);
+            $model->table->filter($right_key, '=', $values);
+            // Run callback.
+            if ($callback !== null) {
+                $callback($model);
+            }
+            // Check if necessery keys are selected.
+            if (
+                count($model->selecting) > 0
+                && !in_array($right_key, $model->selecting)
+            ) {
+                $model->selecting[] = $right_key;
+            }
+            // Fetch and group records.
+            $records = [];
+            foreach ($model->listAll() as $record) {
+                $records[$record->{$right_key}][] = $record;
+            }
+            // Attach records.
+            foreach ($entities as $entity) {
+                $related = $records[$entity->{$left_key}] ?? [];
+                $count = count($related);
+                $entity->{$model->tableName} = new Collection(
+                    1,
+                    $count,
+                    $count,
+                    $count,
+                    ...$related,
+                );
+            }
+        }
+    }
+
+    /**
      * Get records from the current filters and return them as entities.
      * 
      * @return array<T>
@@ -472,6 +496,12 @@ abstract class AbstractModel
         // Apply filters and fetch.
         $this->applyDeletionFilter();
         $records = $this->table->selectRecords($this->entityName);
+
+        // Fetch related records.
+        if (count($this->oneToManyRelationships) > 0) {
+            $this->attachOneToManyRelationships($records);
+        }
+        $this->oneToManyRelationships = [];
 
         return $records;
     }
@@ -550,6 +580,46 @@ abstract class AbstractModel
     {
         $table ??= $this->tableName;
         return "{$table}.{$key}";
+    }
+
+    /**
+     * Fetch related records as a one-to-many relationship in the next query.
+     */
+    protected function relateOneToMany(
+        string $model_class_name,
+        string $left_key,
+        string $right_key,
+        null|callable $callback = null,
+    ): void {
+        $this->oneToManyRelationships[] = [
+            $model_class_name,
+            $left_key,
+            $right_key,
+            $callback,
+        ];
+    }
+
+    /**
+     * Join a one-to-one or many-to-one relationship.
+     * 
+     * @param $table_name Table to join.
+     * @param $left_key Root table key.
+     * @param $right_key Joined table key.
+     */
+    protected function relateOneToOne(
+        string $table_name,
+        string $left_key,
+        string $right_key,
+    ): void {
+        // Prefix keys.
+        $left_key = $this->prefix($left_key);
+        $right_key = $this->prefix($right_key, $table_name);
+
+        // Join tables.
+        $this->table
+            ->join($table_name)
+            ->on($left_key, '=', $right_key)
+            ->on($this->prefix('deleted_at', $table_name), '=', null);
     }
 
     /**

@@ -32,21 +32,39 @@ namespace Tests\Unit\Model;
 
 use Laucov\Db\Data\Connection;
 use Laucov\Db\Data\Driver\DriverFactory;
+use Laucov\Modeling\Model\AbstractModel;
 use Laucov\Modeling\Model\BatchUpdateResult;
 use Laucov\Modeling\Model\Collection;
 use Laucov\Modeling\Model\DeletionFilter;
-use Laucov\Modeling\Entity\AbstractEntity;
-use Laucov\Modeling\Model\AbstractModel;
-use Laucov\Validation\Rules\Regex;
 use PHPUnit\Framework\TestCase;
+
+require __DIR__ . '/includes/Airplane.php';
+require __DIR__ . '/includes/AirplaneModel.php';
+require __DIR__ . '/includes/AirplaneWithSetter.php';
+require __DIR__ . '/includes/Flight.php';
+require __DIR__ . '/includes/FlightCrewMember.php';
+require __DIR__ . '/includes/FlightCrewMemberModel.php';
+require __DIR__ . '/includes/FlightModel.php';
 
 /**
  * @coversDefaultClass \Laucov\Modeling\Model\AbstractModel
  */
 class AbstractModelTest extends TestCase
 {
+    /**
+     * Airplane model.
+     */
+    protected AirplaneModel $airplanes;
+
+    /**
+     * Connection instance.
+     */
     protected Connection $conn;
-    protected AirplaneModel $model;
+
+    /**
+     * Flight model.
+     */
+    protected FlightModel $flights;
 
     /**
      * Provides arguments to retrieve duplicated entries.
@@ -77,71 +95,151 @@ class AbstractModelTest extends TestCase
     public function testCanDeleteAndErase(): void
     {
         // Delete single record.
-        $this->model->delete('1');
+        $this->airplanes->delete('1');
         // Delete multiple records.
-        $this->model->delete('2', '3');
+        $this->airplanes->delete('2', '3');
         // Erase records.
-        $this->model
+        $this->airplanes
             ->filterDeleted(DeletionFilter::SHOW)
             ->erase('1');
 
         // Turn off filter resetting for the next operations.
-        $this->model->keepDeletionFilter = true;
+        $this->airplanes->keepDeletionFilter = true;
 
         // Check active records.
-        $this->assertFalse($this->model->exists('999')); // Never existed
-        $this->assertFalse($this->model->exists('1')); // Erased
-        $this->assertFalse($this->model->exists('1', '2')); // Erased + Deleted
-        $this->assertFalse($this->model->exists('2', '3')); // Deleted
-        $this->assertFalse($this->model->exists('3', '4')); // Deleted + Active
-        $this->assertTrue($this->model->exists('4', '5')); // Active
+        $this->assertFalse($this->airplanes->exists('999')); // Never existed
+        $this->assertFalse($this->airplanes->exists('1')); // Erased
+        $this->assertFalse($this->airplanes->exists('1', '2')); // Erased + Deleted
+        $this->assertFalse($this->airplanes->exists('2', '3')); // Deleted
+        $this->assertFalse($this->airplanes->exists('3', '4')); // Deleted + Active
+        $this->assertTrue($this->airplanes->exists('4', '5')); // Active
 
         // Check all records.
-        $this->model->filterDeleted(DeletionFilter::SHOW);
-        $this->assertFalse($this->model->exists('999'));
-        $this->assertFalse($this->model->exists('1'));
-        $this->assertFalse($this->model->exists('1', '2'));
-        $this->assertTrue($this->model->exists('2', '3'));
-        $this->assertTrue($this->model->exists('3', '4'));
-        $this->assertTrue($this->model->exists('4', '5'));
+        $this->airplanes->filterDeleted(DeletionFilter::SHOW);
+        $this->assertFalse($this->airplanes->exists('999'));
+        $this->assertFalse($this->airplanes->exists('1'));
+        $this->assertFalse($this->airplanes->exists('1', '2'));
+        $this->assertTrue($this->airplanes->exists('2', '3'));
+        $this->assertTrue($this->airplanes->exists('3', '4'));
+        $this->assertTrue($this->airplanes->exists('4', '5'));
 
         // Check deleted records.
-        $this->model->filterDeleted(DeletionFilter::SHOW_EXCLUSIVELY);
-        $this->assertFalse($this->model->exists('999'));
-        $this->assertFalse($this->model->exists('1'));
-        $this->assertFalse($this->model->exists('1', '2'));
-        $this->assertTrue($this->model->exists('2', '3'));
-        $this->assertFalse($this->model->exists('3', '4'));
-        $this->assertFalse($this->model->exists('4', '5'));
+        $this->airplanes->filterDeleted(DeletionFilter::SHOW_EXCLUSIVELY);
+        $this->assertFalse($this->airplanes->exists('999'));
+        $this->assertFalse($this->airplanes->exists('1'));
+        $this->assertFalse($this->airplanes->exists('1', '2'));
+        $this->assertTrue($this->airplanes->exists('2', '3'));
+        $this->assertFalse($this->airplanes->exists('3', '4'));
+        $this->assertFalse($this->airplanes->exists('4', '5'));
 
         // Turn on filter resetting again.
-        $this->model->keepDeletionFilter = false;
+        $this->airplanes->keepDeletionFilter = false;
     }
 
     /**
+     * @covers ::attachOneToManyRelationships
+     * @covers ::getEntities
      * @covers ::relateOneToMany
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__set
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
+     * @uses Laucov\Modeling\Model\AbstractModel::list
+     * @uses Laucov\Modeling\Model\AbstractModel::listAll
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
+     * @uses Laucov\Modeling\Model\AbstractModel::resetPagination
      * @uses Laucov\Modeling\Model\AbstractModel::retrieve
+     * @uses Laucov\Modeling\Model\AbstractModel::withColumns
+     * @uses Laucov\Modeling\Model\Collection::__construct
+     * @uses Laucov\Modeling\Model\Collection::count
+     * @uses Laucov\Modeling\Model\Collection::current
+     * @uses Laucov\Modeling\Model\Collection::get
+     * @uses Laucov\Modeling\Model\Collection::key
+     * @uses Laucov\Modeling\Model\Collection::next
+     * @uses Laucov\Modeling\Model\Collection::rewind
+     * @uses Laucov\Modeling\Model\Collection::valid
      */
     public function testFetchOneToManyRelationships(): void
     {
-        // Create extra tables.
-        $this->createFlightsTable();
-
         // Retrieve without flights.
-        $entity = $this->model->retrieve('3');
-        $this->assertNull($entity->getFlights());
+        $airplane = $this->airplanes->retrieve('3');
+        $this->assertNull($airplane->flights ?? null);
 
-        // Retrieve with flight.
-        $entity = $this->model
+        // Retrieve with flights.
+        $airplane = $this->airplanes
             ->withFlights()
             ->retrieve('3');
-        // @todo $this->assertIsObject($entity->getFlights());
+        $flights = $airplane->flights;
+        $this->assertNotNull($flights);
+        $this->assertCount(3, $flights);
+        $airplane_flight_ids = [2, 4, 6];
+        foreach ($flights as $i => $flight) {
+            $this->assertSame(3, $flight->airplane_id);
+            $this->assertSame($airplane_flight_ids[$i], $flight->id);
+        }
+
+        // List without flights.
+        $airplanes = $this->airplanes->listAll();
+        foreach ($airplanes as $entity) {
+            $this->assertNull($entity->flights ?? null);
+        }
+
+        // List with flights.
+        $airplanes = $this->airplanes
+            ->withFlights()
+            ->listAll();
+        $airplanes_flight_ids = [
+            1 => [1, 9],
+            2 => [5],
+            3 => [2, 4, 6],
+            4 => [],
+            5 => [],
+            6 => [],
+            7 => [],
+            8 => [],
+            9 => [7],
+            10 => [3, 8],
+            11 => [],
+            12 => [],
+            13 => [],
+        ];
+        foreach ($airplanes as $entity) {
+            $flights = $entity->flights;
+            $this->assertNotNull($flights ?? null);
+            $entity_flight_ids = $airplanes_flight_ids[$entity->id];
+            $this->assertSameSize($entity_flight_ids, $flights);
+            foreach ($flights as $i => $flight) {
+                $this->assertSame($entity_flight_ids[$i], $flight->id);
+            }
+        }
+
+        // List using callback.
+        $airplanes = $this->airplanes
+            ->withFlights(function (FlightModel $model) {
+                $model->withColumns('origin');
+            })
+            ->listAll();
+        $this->assertNull($airplanes->get(0)->flights->get(0)->id ?? null);
+        $this->assertSame('GIG', $airplanes->get(0)->flights->get(0)->origin);
+
+        // Test nested callbacks.
+        $airplanes = $this->airplanes
+            ->withFlights(function (FlightModel $m1) {
+                $m1->withCrewMembers(function (FlightCrewMemberModel $m2) {
+                    $m2->withColumns('name');
+                });
+            })
+            ->listAll();
+        $member = $airplanes
+            ->get(9)
+            ->flights
+            ->get(0)
+            ->flights_crew_members
+            ->get(1);
+        $this->assertSame('Jane Baz', $member->name);
+        $this->assertSame(null, $member->id ?? null);
     }
 
     /**
@@ -167,66 +265,56 @@ class AbstractModelTest extends TestCase
      */
     public function testCanFetchOneToOneRelationships(): void
     {
-        // Set the new entity class.
-        $model = new class ($this->conn) extends AirplaneModel {
-            protected string $entityName = AirplaneWithNotes::class;
-        };
+        // Retrieve without joining status.
+        $flight = $this->flights->retrieve('5');
+        $this->assertNull($flight->airplane_altitude ?? null);
 
-        // Create extra tables.
-        $this->createAirplanesInfoTable();
+        // Retrieve joining status.
+        $flight = $this->flights
+            ->withStatus()
+            ->retrieve('5');
+        $this->assertSame(15014, $flight->airplane_altitude);
 
-        // Retrieve without joining notes.
-        /** @var AirplaneWithNotes */
-        $airplane = $model->retrieve('4');
-        $this->assertNull($airplane->notes ?? null);
-
-        // Retrieve joining notes.
-        /** @var AirplaneWithNotes */
-        $airplane = $model
-            ->withNotes()
-            ->retrieve('4');
-        $this->assertSame('Nothing to add.', $airplane->notes);
-
-        // List without joining notes (one-to-one).
-        /** @var Collection<AirplaneWithNotes> */
-        $collection = $model->listAll();
+        // List without joining status (one-to-one).
+        $collection = $this->flights->listAll();
         foreach ($collection as $entity) {
-            $this->assertNull($entity->notes ?? null);
+            $this->assertNull($entity->airplane_altitude ?? null);
         }
 
-        // Set a list of expected notes.
-        $expected_notes = [
-            1 => 'Very cool plane!',
-            2 => 'Flying for 3 years.',
-            4 => 'Nothing to add.',
-            6 => 'This is a note.',
+        // Set the list of expected altitudes.
+        $expected_altitudes = [
+            5 => 15014,
+            6 => 9574,
+            7 => 11477,
+            8 => 9315,
+            9 => 14976,
         ];
 
-        // List joining notes (one-to-one).
-        /** @var Collection<AirplaneWithNotes> */
-        $collection = $model
-            ->withNotes()
+        // List joining statuses (one-to-one).
+        $collection = $this->flights
+            ->withStatus()
             ->listAll();
-        foreach ($collection as $entity) {
-            $id = $entity->id;
-            if (array_key_exists($id, $expected_notes)) {
-                $this->assertSame($expected_notes[$id], $entity->notes);
+        foreach ($collection as $flight) {
+            $id = $flight->id;
+            if (array_key_exists($id, $expected_altitudes)) {
+                $altitude = $flight->airplane_altitude;
+                $this->assertSame($expected_altitudes[$id], $altitude);
             } else {
-                $this->assertNull($entity->notes ?? null);
+                $this->assertNull($entity->airplane_altitude ?? null);
             }
         }
 
         // Test sorting after joining notes (one-to-one).
-        /** @var Collection<AirplaneWithNotes> */
-        $collection = $model
-            ->withNotes()
-            ->sort('notes', true)
+        $collection = $this->flights
+            ->withStatus()
+            ->sort('airplane_altitude', true)
             ->listAll();
-        $this->assertSame(1, $collection->get(0)->id);
-        $this->assertSame(6, $collection->get(1)->id);
-        $this->assertSame(4, $collection->get(2)->id);
-        $this->assertSame(2, $collection->get(3)->id);
-        $this->assertNull($collection->get(4)->notes);
+        $this->assertSame(5, $collection->get(0)->id);
+        $this->assertSame(9, $collection->get(1)->id);
+        $this->assertSame(7, $collection->get(2)->id);
+        $this->assertSame(6, $collection->get(3)->id);
+        $this->assertSame(8, $collection->get(4)->id);
+        $this->assertNull($collection->get(5)->airplane_altitude);
     }
 
     /**
@@ -269,7 +357,7 @@ class AbstractModelTest extends TestCase
         $airplane_a->model = '72-600';
 
         // Insert single record.
-        $this->assertTrue($this->model->insert($airplane_a));
+        $this->assertTrue($this->airplanes->insert($airplane_a));
         $this->assertSame(14, $airplane_a->id);
 
         // Test validation.
@@ -277,10 +365,10 @@ class AbstractModelTest extends TestCase
         $airplane_b->registration = 'PR-TOOLONG';
         $airplane_b->manufacturer = 'Airbus';
         $airplane_b->model = 'A320-214';
-        $this->assertFalse($this->model->insert($airplane_b));
+        $this->assertFalse($this->airplanes->insert($airplane_b));
         $this->assertFalse(isset($airplane_b->id));
         $airplane_b->registration = 'PR-MYR';
-        $this->assertTrue($this->model->insert($airplane_b));
+        $this->assertTrue($this->airplanes->insert($airplane_b));
         $this->assertSame(15, $airplane_b->id);
 
         // Test batch insert/validation.
@@ -292,49 +380,49 @@ class AbstractModelTest extends TestCase
         $airplane_d->registration = 'PS-GPA';
         $airplane_d->manufacturer = 'Boeing';
         $airplane_d->model = '737 MAX 8';
-        $this->assertFalse($this->model->insertBatch($airplane_c, $airplane_d));
+        $this->assertFalse($this->airplanes->insertBatch($airplane_c, $airplane_d));
         $airplane_c->registration = 'LV-BMS';
-        $this->assertTrue($this->model->insertBatch($airplane_c, $airplane_d));
+        $this->assertTrue($this->airplanes->insertBatch($airplane_c, $airplane_d));
         $this->assertSame('17', $this->conn->getLastId());
         $this->assertFalse(isset($airplane_c->id));
         $this->assertFalse(isset($airplane_d->id));
 
         // Test updating.
-        $airplane_e = $this->model->retrieve('17');
-        $this->assertNull($this->model->update($airplane_e));
+        $airplane_e = $this->airplanes->retrieve('17');
+        $this->assertNull($this->airplanes->update($airplane_e));
         $airplane_e->registration = 'AA-AAAA';
-        $this->assertFalse($this->model->update($airplane_e));
+        $this->assertFalse($this->airplanes->update($airplane_e));
         $airplane_e->registration = 'AA-AAA';
-        $this->assertTrue($this->model->update($airplane_e));
+        $this->assertTrue($this->airplanes->update($airplane_e));
 
         // Update multiple.
-        $update = $this->model
+        $update = $this->airplanes
             ->withValue('model', 'A320-271N')
             ->updateBatch('3', '12', '13');
         $this->assertSame(BatchUpdateResult::SUCCESS, $update);
-        $records = $this->model->retrieveBatch('3', '12', '13');
+        $records = $this->airplanes->retrieveBatch('3', '12', '13');
         foreach ($records as $record) {
             $this->assertSame('A320-271N', $record->model);
         }
 
         // Test with invalid values.
-        $update = $this->model
+        $update = $this->airplanes
             ->withValue('registration', 'AB-CDEFG')
             ->updateBatch('1', '2');
         $this->assertSame(BatchUpdateResult::INVALID_VALUES, $update);
 
         // Test with same values.
-        $update = $this->model
+        $update = $this->airplanes
             ->withValue('manufacturer', 'Boeing')
             ->updateBatch('1', '5', '11');
         $this->assertSame(BatchUpdateResult::NO_ENTRIES, $update);
 
         // Test empty update.
-        $update = $this->model->updateBatch('3', '12', '13');
+        $update = $this->airplanes->updateBatch('3', '12', '13');
         $this->assertSame(BatchUpdateResult::NO_VALUES, $update);
 
         // Test with inexistent ID.
-        $update = $this->model
+        $update = $this->airplanes
             ->withValue('model', 'A320-271N')
             ->updateBatch('3', '12', '56');
         $this->assertSame(BatchUpdateResult::NOT_FOUND, $update);
@@ -363,7 +451,7 @@ class AbstractModelTest extends TestCase
     public function testCanList(): void
     {
         // List without pagination.
-        $records = $this->model->listAll();
+        $records = $this->airplanes->listAll();
         $this->assertInstanceOf(Collection::class, $records);
         $this->assertContainsOnlyInstancesOf(Airplane::class, $records);
         $this->assertCount(13, $records);
@@ -381,7 +469,7 @@ class AbstractModelTest extends TestCase
             SQL);
 
         // Paginate - test without filters.
-        $records = $this->model
+        $records = $this->airplanes
             ->paginate(5, 3)
             ->listAll();
         $this->assertCount(4, $records);
@@ -417,7 +505,7 @@ class AbstractModelTest extends TestCase
         $this->assertSame(14, $records->storedCount);
 
         // Sort - ascending.
-        $collection = $this->model
+        $collection = $this->airplanes
             ->sort('model')
             ->paginate(3, 1)
             ->listAll();
@@ -426,7 +514,7 @@ class AbstractModelTest extends TestCase
         $this->assertSame(1, $collection->get(2)->id);
 
         // Sort - descending.
-        $collection = $this->model
+        $collection = $this->airplanes
             ->sort('registration', true)
             ->paginate(2, 2)
             ->listAll();
@@ -449,14 +537,14 @@ class AbstractModelTest extends TestCase
     public function testCanRetrieve(): void
     {
         // Get single record.
-        $record = $this->model->retrieve('10');
+        $record = $this->airplanes->retrieve('10');
         $this->assertInstanceOf(Airplane::class, $record);
         $this->assertSame('PP-PTM', $record->registration);
         $this->assertSame('ATR', $record->manufacturer);
         $this->assertSame('72-500', $record->model);
 
         // Get multiple records.
-        $records = $this->model->retrieveBatch('9', '7');
+        $records = $this->airplanes->retrieveBatch('9', '7');
         $this->assertIsArray($records);
         $this->assertContainsOnlyInstancesOf(Airplane::class, $records);
         $this->assertCount(2, $records);
@@ -468,13 +556,13 @@ class AbstractModelTest extends TestCase
         $this->assertSame('PA-46-500TP', $records[1]->model);
 
         // Sort and retrieve.
-        $records = $this->model
+        $records = $this->airplanes
             ->sort('manufacturer')
             ->retrieveBatch('7', '10', '11');
         $this->assertSame(10, $records[0]->id);
         $this->assertSame(11, $records[1]->id);
         $this->assertSame(7, $records[2]->id);
-        $records = $this->model
+        $records = $this->airplanes
             ->sort('id', true)
             ->retrieveBatch('1', '10', '5');
         $this->assertSame(10, $records[0]->id);
@@ -482,10 +570,10 @@ class AbstractModelTest extends TestCase
         $this->assertSame(1, $records[2]->id);
 
         // Retrieve inexistent record.
-        $this->assertNull($this->model->retrieve('95'));
+        $this->assertNull($this->airplanes->retrieve('95'));
 
         // Retrieve partially existing batch.
-        $records = $this->model->retrieveBatch('95', '7');
+        $records = $this->airplanes->retrieveBatch('95', '7');
         $this->assertCount(1, $records);
         $this->assertSame(7, $records[0]->id);
     }
@@ -651,37 +739,24 @@ class AbstractModelTest extends TestCase
     }
 
     /**
-     * Create a table for airplane info entries.
+     * This method is called before each test.
      */
-    protected function createAirplanesInfoTable(): void
+    protected function setUp(): void
     {
+        // Create connection instance and table.
+        $this->conn = new Connection(new DriverFactory(), 'sqlite::memory:');
+
+        // Create tables.
         $this->conn
             ->query(<<<SQL
-                CREATE TABLE "airplanes_notes" (
+                CREATE TABLE "airplanes" (
                     "id" INTEGER PRIMARY KEY,
-                    "airplane_id" INT(11),
-                    "notes" VARCHAR(256),
+                    "registration" VARCHAR(8),
+                    "manufacturer" VARCHAR(32),
+                    "model" VARCHAR(128),
                     "deleted_at" DATETIME
                 )
                 SQL)
-            ->query(<<<SQL
-                INSERT INTO "airplanes_notes"
-                    ("airplane_id", "notes", "deleted_at")
-                VALUES
-                    (1, 'Very cool plane!', null),
-                    (2, 'Flying for 3 years.', null),
-                    (4, 'Something to add.', '2024-01-01 01:00:00'),
-                    (4, 'Nothing to add.', null),
-                    (6, 'This is a note.', null)
-            SQL);
-    }
-
-    /**
-     * Create a table for flights.
-     */
-    protected function createFlightsTable(): void
-    {
-        $this->conn
             ->query(<<<SQL
                 CREATE TABLE "flights" (
                     "id" INTEGER PRIMARY KEY,
@@ -692,38 +767,28 @@ class AbstractModelTest extends TestCase
                 )
                 SQL)
             ->query(<<<SQL
-                INSERT INTO "flights"
-                    ("airplane_id", "origin", "destination")
-                VALUES
-                    (1, 'GIG', 'FLN'),
-                    (3, 'VCP', 'FLN'),
-                    (10, 'VCP', 'LDB'),
-                    (3, 'CNF', 'VCP'),
-                    (2, 'GRU', 'MOC'),
-                    (3, 'GRU', 'BOG'),
-                    (9, 'PLU', NULL),
-                    (10, 'CNF', 'UDI'),
-                    (1, 'SSA', 'GRU')
-            SQL);
-    }
-
-    protected function setUp(): void
-    {
-        // Create connection instance and table.
-        $this->conn = new Connection(new DriverFactory(), 'sqlite::memory:');
-        $this->conn
-            ->query(<<<SQL
-                CREATE TABLE airplanes (
-                    id INTEGER PRIMARY KEY,
-                    registration VARCHAR(8),
-                    manufacturer VARCHAR(32),
-                    model VARCHAR(128),
-                    deleted_at DATETIME
+                CREATE TABLE "flights_statuses" (
+                    "id" INTEGER PRIMARY KEY,
+                    "flight_id" INT(11),
+                    "departed_at" DATETIME,
+                    "airplane_altitude" INT(11),
+                    "deleted_at" DATETIME
                 )
                 SQL)
             ->query(<<<SQL
-                INSERT INTO airplanes
-                    (registration, manufacturer, model)
+                CREATE TABLE "flights_crew_members" (
+                    "id" INTEGER PRIMARY KEY,
+                    "flight_id" INT(11),
+                    "name" VARCHAR(128),
+                    "deleted_at" DATETIME
+                )
+                SQL);
+
+        // Insert records.
+        $this->conn
+            ->query(<<<SQL
+                INSERT INTO "airplanes"
+                    ("registration", "manufacturer", "model")
                 VALUES
                     ('PR-XMI', 'Boeing', '737 MAX 8'),
                     ('PR-XBR', 'Airbus', 'A320-271N'),
@@ -738,97 +803,48 @@ class AbstractModelTest extends TestCase
                     ('LV-KEI', 'Boeing', '737 MAX 8'),
                     ('CC-DBE', 'Airbus', 'A320-251N'),
                     ('PR-YSH', 'Airbus', 'A320-251N')
+            SQL)
+            ->query(<<<SQL
+                INSERT INTO "flights"
+                    ("airplane_id", "origin", "destination")
+                VALUES
+                    (1, 'GIG', 'FLN'),
+                    (3, 'VCP', 'FLN'),
+                    (10, 'VCP', 'LDB'),
+                    (3, 'CNF', 'VCP'),
+                    (2, 'GRU', 'MOC'),
+                    (3, 'GRU', 'BOG'),
+                    (9, 'PLU', NULL),
+                    (10, 'CNF', 'UDI'),
+                    (1, 'SSA', 'GRU')
+            SQL)
+            ->query(<<<SQL
+                INSERT INTO "flights_statuses"
+                    ("flight_id", "departed_at", "airplane_altitude", "deleted_at")
+                VALUES
+                    (1, NULL, NULL, '2024-05-01 12:10:28'),
+                    (1, '2024-05-01 17:00:04', NULL, '2024-05-01 19:56:02'),
+                    (2, '2024-05-01 17:41:53', NULL, '2024-05-01 18:59:58'),
+                    (3, '2024-05-01 17:49:30', NULL, '2024-05-01 21:02:56'),
+                    (4, '2024-05-01 18:05:41', NULL, '2024-05-01 20:12:01'),
+                    (5, '2024-05-02 20:48:12', 15014, NULL),
+                    (6, '2024-05-02 21:00:07', 9574, NULL),
+                    (7, '2024-05-02 21:01:49', 11477, NULL),
+                    (8, '2024-05-02 21:04:31', 9315, NULL),
+                    (9, '2024-05-02 21:09:56', 14976, NULL)
+            SQL)
+            ->query(<<<SQL
+                INSERT INTO "flights_crew_members"
+                    ("flight_id", "name")
+                VALUES
+                    (1, 'John Doe'),
+                    (1, 'James Foobar'),
+                    (3, 'Mary Papadopoulos'),
+                    (3, 'Jane Baz')
             SQL);
 
-        $this->model = new AirplaneModel($this->conn);
+        // Create model instances.
+        $this->airplanes = new AirplaneModel($this->conn);
+        $this->flights = new FlightModel($this->conn);
     }
-}
-
-/**
- * Test entity that represents an airplane.
- */
-class Airplane extends AbstractEntity
-{
-    public int $id;
-    #[Regex('/^[A-Z]{2}\-[A-Z]{3}$/')]
-    public string $registration;
-    public string $manufacturer;
-    public string $model;
-    protected null|Collection $flights = null;
-    /** @return null|Collection<Flight> */
-    public function getFlights(): mixed
-    {
-        return $this->flights;
-    }
-}
-
-/**
- * Test entity that represents an airplane with an extra field "notes".
- */
-class AirplaneWithNotes extends Airplane
-{
-    public null|string $notes;
-}
-
-/**
- * Test model that provides `Airplane` instances.
- * 
- * @extends AbstractModel<Airplane>
- */
-class AirplaneModel extends AbstractModel
-{
-    protected string $entityName = Airplane::class;
-    protected string $primaryKey = 'id';
-    protected string $tableName = 'airplanes';
-    public function withFlights(): static
-    {
-        $this->relateOneToMany('flights', 'id', 'airplane_id');
-        return $this;
-    }
-    public function withNotes(): static
-    {
-        $this->relateOneToOne('airplanes_notes', 'id', 'airplane_id');
-        return $this;
-    }
-}
-
-/**
- * Extension of `Airplane` that catches unused values.
- */
-class AirplaneWithSetter extends Airplane
-{
-    protected array $unusedColumns = [];
-    public function __set(string $name, mixed $value): void
-    {
-        $this->unusedColumns[] = $name;
-        parent::__set($name, $value);
-    }
-    public function getUnusedColumns(): array
-    {
-        return $this->unusedColumns;
-    }
-}
-
-/**
- * Bad model.
- * 
- * Will fail when retrieval methods are called for planes with the same model.
- * 
- * @extends AbstractModel<Airplane>
- */
-class FaultyModel extends AbstractModel
-{
-    protected string $entityName = Airplane::class;
-    protected string $primaryKey = 'model';
-    protected string $tableName = 'airplanes';
-}
-
-/**
- * Test entity that represents an flight.
- */
-class Flight
-{
-    public int $id;
-    public null|string $origin;
-    public null|string $destination;
 }
