@@ -28,7 +28,6 @@
 
 namespace Laucov\Modeling\Entity;
 
-use Laucov\Modeling\Entity\Required;
 use Laucov\Validation\Error;
 use Laucov\Validation\Interfaces\RuleInterface;
 use Laucov\Validation\Ruleset;

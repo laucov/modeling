@@ -61,7 +61,7 @@ class RequiredTest extends TestCase
     {
         $this->expectNotToPerformAssertions();
 
-        new class {
+        new class () {
             #[Required]
             public $a = 'foo';
         };
