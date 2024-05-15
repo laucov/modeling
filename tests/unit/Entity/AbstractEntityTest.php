@@ -54,6 +54,8 @@ class AbstractEntityTest extends TestCase
     public function testCachesRules(): void
     {
         // Create entity.
+        // Override the `cacheRules()` method to test whether the entity caches
+        // its rules instead of repeatedly fetching them as attributes.
         $entity = new class () extends AbstractEntity {
             public static int $cacheCount = 0;
             #[Required]
