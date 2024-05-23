@@ -71,6 +71,7 @@ class Flight extends AbstractEntity
      * 
      * Property create to test one-to-one relationships.
      */
+    #[Relationship('flights_statuses')]
     public null|int $airplane_altitude;
 
     /**
@@ -80,14 +81,4 @@ class Flight extends AbstractEntity
      */
     #[Relationship]
     public Collection $flights_crew_members;
-
-    // /**
-    //  * Crew members getter.
-    //  *
-    //  * @return null|Collection<FlightCrewMember>
-    //  */
-    // public function getCrewMembers(): mixed
-    // {
-    //     return $this->flights_crew_members;
-    // }
 }

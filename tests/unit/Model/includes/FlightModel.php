@@ -46,7 +46,7 @@ class FlightModel extends AbstractModel
     /**
      * Test one-to-one relationship with the "flights_statuses" table.
      */
-    public function withStatus(null|callable $callback = null): static
+    public function withStatus(): static
     {
         $this->relateOneToOne('flights_statuses', 'id', 'flight_id');
         return $this;

@@ -52,7 +52,7 @@ abstract class AbstractModel
     protected DeletionFilter $deletionFilter = DeletionFilter::HIDE;
 
     /**
-     * The entity's public properties names.
+     * The entity's default selected keys.
      * 
      * @var array<string>
      */
@@ -64,6 +64,22 @@ abstract class AbstractModel
      * @var class-string<T>
      */
     protected string $entityName;
+
+    /**
+     * Addition to the entity's default selected keys.
+     * 
+     * Used when joining one-to-one relationships.
+     * 
+     * @var array<string>
+     */
+    protected array $entityRelationshipKeys = [];
+
+    /**
+     * Joined one-to-one relationships.
+     * 
+     * @var array<string>
+     */
+    protected array $joinedRelationships = [];
 
     /**
      * One-to-many relationships.
@@ -131,11 +147,20 @@ abstract class AbstractModel
         // Store entity's key names.
         $this->entityKeys = [];
         foreach (array_keys(get_class_vars($this->entityName)) as $key) {
+            // Check if is a relationship key.
             $property = new \ReflectionProperty($this->entityName, $key);
-            if (count($property->getAttributes(Relationship::class)) === 0) {
+            $rel_attributes = $property->getAttributes(Relationship::class);
+            $rel = count($rel_attributes) > 0
+                ? $rel_attributes[0]->newInstance()
+                : null;
+            if ($rel === null) {
+                // Store default key.
                 $this->entityKeys[] = $key === $this->primaryKey
                     ? $this->prefix($key)
                     : $key;
+            } else {
+                // Store relationship key.
+                $this->entityRelationshipKeys[$rel->tableName][] = $key;
             }
         }
     }
@@ -480,6 +505,25 @@ abstract class AbstractModel
     }
 
     /**
+     * Get the next SELECT query default keys.
+     * 
+     * @return array<string>
+     */
+    public function getDefaultColumns(): array
+    {
+        // Get main keys.
+        $columns = $this->entityKeys;
+
+        // Get relationship keys.
+        foreach ($this->joinedRelationships as $table_name) {
+            $keys = $this->entityRelationshipKeys[$table_name] ?? [];
+            array_push($columns, ...$keys);
+        }
+
+        return $columns;
+    }
+
+    /**
      * Get records from the current filters and return them as entities.
      * 
      * @return array<T>
@@ -489,11 +533,14 @@ abstract class AbstractModel
         // Select columns.
         $column_names = count($this->selecting) > 0
             ? $this->selecting
-            : $this->entityKeys;
+            : $this->getDefaultColumns();
         foreach ($column_names as $column_name) {
             $this->table->pick($column_name);
         }
         $this->selecting = [];
+
+        // Clear joined relationships table list.
+        $this->joinedRelationships = [];
 
         // Apply filters and fetch.
         $this->applyDeletionFilter();
@@ -624,6 +671,9 @@ abstract class AbstractModel
             ->join($table_name)
             ->on($left_key, '=', $right_key)
             ->on($this->prefix('deleted_at', $table_name), '=', null);
+        
+        // Store joined table name.
+        $this->joinedRelationships[] = $table_name;
     }
 
     /**

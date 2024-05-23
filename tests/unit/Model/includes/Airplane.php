@@ -70,24 +70,4 @@ class Airplane extends AbstractEntity
      */
     #[Relationship]
     public Collection $flights;
-
-    // /**
-    //  * Airplane flight getter.
-    //  *
-    //  * @return null|Collection<Flight>
-    //  */
-    // public function getFlights(): mixed
-    // {
-    //     return $this->flights;
-    // }
-
-    // /**
-    //  * Airplane flight setter.
-    //  *
-    //  * @return null|Collection<Flight>
-    //  */
-    // public function setFlights(Collection $flights): void
-    // {
-    //     $this->flights = $flights;
-    // }
 }

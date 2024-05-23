@@ -89,6 +89,7 @@ class AbstractModelTest extends TestCase
      * @covers ::erase
      * @covers ::exists
      * @covers ::filterDeleted
+     * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
@@ -142,8 +143,10 @@ class AbstractModelTest extends TestCase
      * @covers ::relateOneToMany
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::__set
+     * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
      * @uses Laucov\Modeling\Model\AbstractModel::list
@@ -247,8 +250,10 @@ class AbstractModelTest extends TestCase
      * @covers ::prefix
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::__set
+     * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
      * @uses Laucov\Modeling\Model\AbstractModel::list
@@ -332,8 +337,10 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Entity\AbstractEntity::getRuleset
      * @uses Laucov\Modeling\Entity\AbstractEntity::toArray
      * @uses Laucov\Modeling\Entity\AbstractEntity::validate
+     * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
@@ -446,7 +453,9 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\Collection::valid
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::__set
+     * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      */
     public function testCanList(): void
     {
@@ -529,8 +538,10 @@ class AbstractModelTest extends TestCase
      * @covers ::retrieveBatch
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::__set
+     * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
@@ -606,8 +617,10 @@ class AbstractModelTest extends TestCase
      * @covers ::getEntity
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::__set
+     * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      * @uses Laucov\Modeling\Model\AbstractModel::retrieve
@@ -629,8 +642,10 @@ class AbstractModelTest extends TestCase
      * @covers ::retrieveBatch
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::__set
+     * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      * @dataProvider duplicatedAirplaneModelRetrievalProvider
@@ -655,8 +670,10 @@ class AbstractModelTest extends TestCase
      * @covers ::retrieveBatch
      * @covers ::withColumns
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
      * @uses Laucov\Modeling\Model\AbstractModel::list
      * @uses Laucov\Modeling\Model\AbstractModel::listAll

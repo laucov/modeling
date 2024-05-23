@@ -31,6 +31,17 @@ namespace Laucov\Modeling\Entity;
 /**
  * Represents a relationship for an entity.
  */
+#[\Attribute()]
 class Relationship
 {
+    /**
+     * Create the attribute instance.
+     */
+    public function __construct(
+        /**
+         * Table name.
+         */
+        public readonly null|string $tableName = '',
+    ) {
+    }
 }
