@@ -175,30 +175,72 @@ abstract class AbstractEntity
     {
         // Extract each properties' rules.
         foreach ($this->getProperties() as $prop) {
-            // Get name and instantiate the ruleset.
+            // Get name.
             $name = $prop->getName();
+            // Get attributes.
+            $attributes = $prop->getAttributes();
+            // Create ruleset.
             $ruleset = new Ruleset();
             $ruleset->setData($this);
             $this->rules[$name] = $ruleset;
-            // Check if is required.
-            /** @var null|\ReflectionAttribute */
-            $attribute = $prop->getAttributes(Required::class)[0] ?? null;
-            if ($attribute !== null) {
-                /** @var Required */
-                $required = $attribute->newInstance();
-                $ruleset
-                    ->require(count($required->with) === 0)
-                    ->requireWith(...$required->with);
+            // Process attributes.
+            $is_required = false;
+            $required_with = null;
+            $obligatoriness_message = null;
+            /** @var null|string|RuleInterface */
+            $rule = null;
+            foreach ($attributes as $attr) {
+                if (is_a($attr->getName(), Required::class, true)) {
+                    // Remember obligatoriness.
+                    /** @var Required */
+                    $attr = $attr->newInstance();
+                    $rule = 'required';
+                    $is_required = true;
+                    if (count($attr->with)) {
+                        $required_with = $attr->with;
+                    }
+                } elseif (is_a($attr->getName(), RuleInterface::class, true)) {
+                    // Add rule.
+                    /** @var RuleInterface */
+                    $attr = $attr->newInstance();
+                    $ruleset->addRule($attr);
+                    $rule = $attr;
+                } elseif (is_a($attr->getName(), ErrorMessage::class, true)) {
+                    // Add message.
+                    /** @var ErrorMessage */
+                    $attr = $attr->newInstance();
+                    if ($rule === 'required') {
+                        $obligatoriness_message = $attr->content;
+                    } elseif ($rule instanceof RuleInterface) {
+                        $rule->setMessage($attr->content);
+                    }
+                }
             }
-            // Get attributes and add each rule.
-            /** @var \ReflectionAttribute[] */
-            $attributes = $prop->getAttributes(
-                RuleInterface::class,
-                \ReflectionAttribute::IS_INSTANCEOF,
-            );
-            foreach ($attributes as $attribute) {
-                $ruleset->addRule($attribute->newInstance());
+            // Set obligatoriness.
+            if ($is_required) {
+                $ruleset->require($required_with, $obligatoriness_message);
             }
+
+
+
+            // // Check if is required.
+            // /** @var null|\ReflectionAttribute */
+            // $attribute = $prop->getAttributes(Required::class)[0] ?? null;
+            // if ($attribute !== null) {
+            //     /** @var Required */
+            //     $required = $attribute->newInstance();
+            //     $with = count($required->with) === 0 ? null : $required->with;
+            //     $ruleset->require($with);
+            // }
+            // // Get attributes and add each rule.
+            // /** @var \ReflectionAttribute[] */
+            // $attributes = $prop->getAttributes(
+            //     RuleInterface::class,
+            //     \ReflectionAttribute::IS_INSTANCEOF,
+            // );
+            // foreach ($attributes as $attribute) {
+            //     $ruleset->addRule($attribute->newInstance());
+            // }
         }
     }
 

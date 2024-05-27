@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Entity;
 
 use Laucov\Modeling\Entity\AbstractEntity;
+use Laucov\Modeling\Entity\ErrorMessage;
 use Laucov\Modeling\Entity\Required;
 use Laucov\Validation\Rules\Length;
 use Laucov\Validation\Rules\Regex;
@@ -38,6 +39,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @coversDefaultClass \Laucov\Modeling\Entity\AbstractEntity
+ * @covers \Laucov\Modeling\Entity\ErrorMessage
  */
 class AbstractEntityTest extends TestCase
 {
@@ -61,6 +63,7 @@ class AbstractEntityTest extends TestCase
             #[Required]
             #[Regex('/^\d+\-\d+$/')]
             public string $zip_code;
+            #[Required(['foo', 'bar'])]
             #[Regex('/^[A-Z]+$/')]
             #[Length(3, 3)]
             public string $country;
@@ -141,6 +144,56 @@ class AbstractEntityTest extends TestCase
         $this->assertSame($array['number'], '5555555555554444');
         $this->assertSame($array['cvc'], '123');
         $this->assertSame($array['expires_on'], '2024-05-01');
+    }
+
+    /**
+     * @covers ::cacheRules
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getProperties
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getPropertyNames
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getRuleset
+     * @uses Laucov\Modeling\Entity\AbstractEntity::validate
+     * @uses Laucov\Modeling\Entity\ErrorMessage::__construct
+     * @uses Laucov\Modeling\Entity\Required::__construct
+     */
+    public function testCanSetValidationMessages(): void
+    {
+        // Create entity instance.
+        $entity = new class () extends AbstractEntity {
+            #[Required]
+            #[Length(0, 16)]
+            public string $name_a;
+            #[Required]
+            #[ErrorMessage('This field is required!')]
+            #[Length(0, 16)]
+            #[ErrorMessage('Value too long!')]
+            public string $name_b;
+        };
+
+        // Test "Required" error.
+        $entity->validate();
+        $errors_a = $entity->getErrors('name_a');
+        $this->assertCount(1, $errors_a);
+        $this->assertSame('required', $errors_a[0]->rule);
+        $this->assertNull($errors_a[0]->message);
+        $errors_b = $entity->getErrors('name_b');
+        $this->assertCount(1, $errors_b);
+        $this->assertSame('required', $errors_b[0]->rule);
+        $this->assertSame('This field is required!', $errors_b[0]->message);
+
+        // Test rule error.
+        $entity->name_a = 'Very long value...';
+        $entity->name_b = 'Another very long value...';
+        $entity->validate();
+        $errors_a = $entity->getErrors('name_a');
+        $this->assertCount(1, $errors_a);
+        $this->assertSame(Length::class, $errors_a[0]->rule);
+        $this->assertNull($errors_a[0]->message);
+        $errors_b = $entity->getErrors('name_b');
+        $this->assertCount(1, $errors_b);
+        $this->assertSame(Length::class, $errors_b[0]->rule);
+        $this->assertSame('Value too long!', $errors_b[0]->message);
     }
 
     /**
