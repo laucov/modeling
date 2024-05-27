@@ -48,6 +48,7 @@ require __DIR__ . '/includes/FlightModel.php';
 
 /**
  * @coversDefaultClass \Laucov\Modeling\Model\AbstractModel
+ * @covers \Laucov\Modeling\Entity\Relationship
  */
 class AbstractModelTest extends TestCase
 {
@@ -246,6 +247,7 @@ class AbstractModelTest extends TestCase
     }
 
     /**
+     * @covers ::getDefaultColumns
      * @covers ::relateOneToOne
      * @covers ::prefix
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
@@ -253,7 +255,6 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
-     * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
      * @uses Laucov\Modeling\Model\AbstractModel::list
@@ -666,6 +667,7 @@ class AbstractModelTest extends TestCase
     }
 
     /**
+     * @covers ::getDefaultColumns
      * @covers ::getEntities
      * @covers ::retrieveBatch
      * @covers ::withColumns
@@ -673,7 +675,6 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
-     * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
      * @uses Laucov\Modeling\Model\AbstractModel::list
      * @uses Laucov\Modeling\Model\AbstractModel::listAll
