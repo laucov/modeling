@@ -166,6 +166,26 @@ abstract class AbstractModel
     }
 
     /**
+     * Create a new entity instance that can be used by this model.
+     * 
+     * @return T
+     */
+    public function createEntity(): mixed
+    {
+        return new $this->entityName;
+    }
+
+    /**
+     * Create a new entity instance that can be used by this model.
+     * 
+     * @return CreationResult<T>
+     */
+    public function createEntityFromArray(array $values): mixed
+    {
+        return $this->entityName::createFromArray($values);
+    }
+
+    /**
      * Perform a soft delete operation for the given primary key values.
      */
     public function delete(string ...$ids): void

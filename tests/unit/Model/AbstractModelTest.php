@@ -85,6 +85,44 @@ class AbstractModelTest extends TestCase
     }
 
     /**
+     * @covers ::createEntity
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__set
+     * @uses Laucov\Modeling\Entity\AbstractEntity::createFromArray
+     * @uses Laucov\Modeling\Model\AbstractModel::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::createEntityFromArray
+     * @uses Laucov\Modeling\Model\AbstractModel::prefix
+     */
+    public function testCanCreateEntity(): void
+    {
+        // Create with default values.
+        $entity = $this->airplanes->createEntity();
+        $this->assertIsObject($entity);
+        $this->assertInstanceOf(Airplane::class, $entity);
+        $this->assertNull($entity->id ?? null);
+        $this->assertNull($entity->manufacturer ?? null);
+        $this->assertNull($entity->model ?? null);
+        $this->assertNull($entity->registration ?? null);
+
+        // Create with custom values.
+        $result = $this->airplanes->createEntityFromArray([
+            'manufacturer' => 'John Doe Aviation',
+            'model' => 'Little John B',
+            'registration' => 'FO-BAR',
+            'some_prop' => 'foobar',
+        ]);
+        $this->assertCount(0, $result->typeErrors);
+        $entity = $result->entity;
+        $this->assertIsObject($entity);
+        $this->assertInstanceOf(Airplane::class, $entity);
+        $this->assertNull($entity->id ?? null);
+        $this->assertSame('John Doe Aviation', $entity->manufacturer ?? null);
+        $this->assertSame('Little John B', $entity->model ?? null);
+        $this->assertSame('FO-BAR', $entity->registration ?? null);
+        $this->assertObjectNotHasProperty('some_prop', $entity);
+    }
+
+    /**
      * @covers ::applyDeletionFilter
      * @covers ::delete
      * @covers ::erase
