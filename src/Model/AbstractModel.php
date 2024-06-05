@@ -226,6 +226,10 @@ abstract class AbstractModel
 
         // Insert record.
         $data = $entity->toArray();
+        if (count($data) < 1) {
+            $message = 'Cannot insert empty records to the database.';
+            throw new \RuntimeException($message);
+        }
         $id = $this->table->insertRecord($data);
         $entity->{$this->primaryKey} = $id;
 
@@ -235,7 +239,7 @@ abstract class AbstractModel
     /**
      * Insert one or more records.
      */
-    public function insertBatch(...$entities): bool
+    public function insertBatch(AbstractEntity ...$entities): bool
     {
         // Validate each entity.
         $is_valid = true;
@@ -249,7 +253,15 @@ abstract class AbstractModel
         }
 
         // Insert all entities.
-        $data = array_map(fn ($e) => $e->toArray(), $entities);
+        $data = [];
+        foreach ($entities as $entity) {
+            $entry = $entity->toArray();
+            if (count($entry) < 1) {
+                $message = 'Cannot insert empty records to the database.';
+                throw new \RuntimeException($message);
+            }
+            $data[] = $entry;
+        }
         $this->table->insertRecords(...$data);
 
         return true;
@@ -671,7 +683,7 @@ abstract class AbstractModel
             ->join($table_name)
             ->on($left_key, '=', $right_key)
             ->on($this->prefix('deleted_at', $table_name), '=', null);
-        
+
         // Store joined table name.
         $this->joinedRelationships[] = $table_name;
     }

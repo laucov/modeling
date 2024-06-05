@@ -591,6 +591,50 @@ class AbstractModelTest extends TestCase
     }
 
     /**
+     * @covers ::insert
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Entity\AbstractEntity::cacheRules
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getProperties
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getPropertyNames
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getRuleset
+     * @uses Laucov\Modeling\Entity\AbstractEntity::toArray
+     * @uses Laucov\Modeling\Entity\AbstractEntity::validate
+     * @uses Laucov\Modeling\Entity\ObjectReader::toArray
+     * @uses Laucov\Modeling\Model\AbstractModel::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::prefix
+     */
+    public function testChecksIfInsertedEntitiesAreEmpty(): void
+    {
+        // Insert empty entity.
+        $this->expectException(\RuntimeException::class);
+        $message = 'Cannot insert empty records to the database.';
+        $this->expectExceptionMessage($message);
+        $this->airplanes->insert(new Airplane());
+    }
+
+    /**
+     * @covers ::insertBatch
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Entity\AbstractEntity::cacheRules
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getProperties
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getPropertyNames
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getRuleset
+     * @uses Laucov\Modeling\Entity\AbstractEntity::toArray
+     * @uses Laucov\Modeling\Entity\AbstractEntity::validate
+     * @uses Laucov\Modeling\Entity\ObjectReader::toArray
+     * @uses Laucov\Modeling\Model\AbstractModel::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::prefix
+     */
+    public function testChecksIfInsertedEntityBatchIsEmpty(): void
+    {
+        // Insert empty entities.
+        $this->expectException(\RuntimeException::class);
+        $message = 'Cannot insert empty records to the database.';
+        $this->expectExceptionMessage($message);
+        $this->airplanes->insertBatch(new Airplane(), new Airplane());
+    }
+
+    /**
      * @coversNothing
      */
     public function testFiltersSoftDeletedRecords(): void
