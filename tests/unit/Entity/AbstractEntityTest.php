@@ -33,6 +33,7 @@ namespace Tests\Unit\Entity;
 use Laucov\Modeling\Entity\AbstractEntity;
 use Laucov\Modeling\Entity\ErrorMessage;
 use Laucov\Modeling\Entity\Required;
+use Laucov\Modeling\Entity\TypeError;
 use Laucov\Validation\Rules\Length;
 use Laucov\Validation\Rules\Regex;
 use PHPUnit\Framework\TestCase;
@@ -118,6 +119,64 @@ class AbstractEntityTest extends TestCase
         $this->assertFalse(isset($entries->firstName));
         $this->assertSame('Doevsky', $entries->lastName);
         $this->assertFalse(isset($entries->age));
+    }
+
+    /**
+     * @covers ::createFromArray
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__set
+     */
+    public function testCanCreateFromArray(): void
+    {
+        // Create entity class.
+        $entity = new class () extends AbstractEntity {
+            public string $foo;
+            public int $bar;
+            public float $baz;
+        };
+
+        // Instantiate from array.
+        $result = $entity::class::createFromArray([
+            'foo' => 'This is a string.',
+            'bar' => 123,
+            'baz' => 123.001,
+            'hey' => 'ho',
+        ]);
+        $instance = $result->entity;
+
+        // Assert.
+        $this->assertIsObject($entity);
+        $this->assertInstanceOf($entity::class, $instance);
+        $this->assertSame('This is a string.', $instance->foo);
+        $this->assertSame(123, $instance->bar);
+        $this->assertSame(123.001, $instance->baz);
+        $this->assertIsArray($result->typeErrors);
+        $this->assertCount(0, $result->typeErrors);
+
+        // Test if catches type errors.
+        $result = $entity::class::createFromArray([
+            'baz' => [123],
+            'foo' => ['This is not a string.'],
+            'bar' => 123.902392,
+        ]);
+        $this->assertIsArray($result->typeErrors);
+        $this->assertCount(2, $result->typeErrors);
+        /** @var TypeError */
+        $error = $result->typeErrors[0];
+        $this->assertIsObject($error);
+        $this->assertSame('array', $error->actual);
+        $this->assertSame('float', $error->expected);
+        $this->assertSame('baz', $error->name);
+        $this->assertIsObject($error->error);
+        $this->assertInstanceOf(\TypeError::class, $error->error);
+        /** @var TypeError */
+        $error = $result->typeErrors[1];
+        $this->assertIsObject($error);
+        $this->assertSame('array', $error->actual);
+        $this->assertSame('string', $error->expected);
+        $this->assertSame('foo', $error->name);
+        $this->assertIsObject($error->error);
+        $this->assertInstanceOf(\TypeError::class, $error->error);
     }
 
     /**

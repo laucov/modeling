@@ -38,6 +38,42 @@ use Laucov\Validation\Ruleset;
 abstract class AbstractEntity
 {
     /**
+     * Create an instance using the entries of an array.
+     * 
+     * @return CreationResult<static>
+     */
+    public static function createFromArray(array $data): mixed
+    {
+        // Create instance.
+        $class_name = static::class;
+        $entity = new $class_name();
+
+        // Set properties.
+        $errors = [];
+        foreach ($data as $key => $value) {
+            try {
+                $entity->{$key} = $value;
+            } catch (\TypeError $e) {
+                $property = new \ReflectionProperty($entity, $key);
+                // $invalid[] = sprintf('"%s" (%s)', $name, $type);
+                $error = new TypeError();
+                $error->actual = gettype($value);
+                $error->error = $e;
+                $error->expected = (string) $property->getType();
+                $error->name = $key;
+                $errors[] = $error;
+            }
+        }
+
+        // Create result object.
+        $result = new CreationResult();
+        $result->entity = $entity;
+        $result->typeErrors = $errors;
+
+        return $result;
+    }
+
+    /**
      * Cached data.
      * 
      * Stores the current "original" state of this entity.
