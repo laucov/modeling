@@ -50,7 +50,7 @@ abstract class AbstractSeeder
     /**
      * Seed the database.
      */
-    public abstract function seed(): void;
+    abstract public function seed(): void;
 
     /**
      * Get a table instance.

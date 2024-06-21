@@ -172,7 +172,7 @@ abstract class AbstractModel
      */
     public function createEntity(): mixed
     {
-        return new $this->entityName;
+        return new $this->entityName();
     }
 
     /**

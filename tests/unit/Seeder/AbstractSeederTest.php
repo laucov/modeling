@@ -96,7 +96,7 @@ class AbstractSeederTest extends TestCase
         $connection
             ->expects($this->once())
             ->method('getLastId');
-        
+
         // Run the seeder.
         $seeder->seed();
     }
