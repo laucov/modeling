@@ -55,7 +55,6 @@ abstract class AbstractEntity
                 $entity->{$key} = $value;
             } catch (\TypeError $e) {
                 $property = new \ReflectionProperty($entity, $key);
-                // $invalid[] = sprintf('"%s" (%s)', $name, $type);
                 $error = new TypeError();
                 $error->actual = gettype($value);
                 $error->error = $e;
@@ -256,27 +255,6 @@ abstract class AbstractEntity
             if ($is_required) {
                 $ruleset->require($required_with, $obligatoriness_message);
             }
-
-
-
-            // // Check if is required.
-            // /** @var null|\ReflectionAttribute */
-            // $attribute = $prop->getAttributes(Required::class)[0] ?? null;
-            // if ($attribute !== null) {
-            //     /** @var Required */
-            //     $required = $attribute->newInstance();
-            //     $with = count($required->with) === 0 ? null : $required->with;
-            //     $ruleset->require($with);
-            // }
-            // // Get attributes and add each rule.
-            // /** @var \ReflectionAttribute[] */
-            // $attributes = $prop->getAttributes(
-            //     RuleInterface::class,
-            //     \ReflectionAttribute::IS_INSTANCEOF,
-            // );
-            // foreach ($attributes as $attribute) {
-            //     $ruleset->addRule($attribute->newInstance());
-            // }
         }
     }
 
