@@ -44,6 +44,7 @@ class CollectionTest extends TestCase
      * @covers ::count
      * @covers ::current
      * @covers ::get
+     * @covers ::has
      * @covers ::key
      * @covers ::next
      * @covers ::rewind
@@ -53,6 +54,7 @@ class CollectionTest extends TestCase
     public function testCanInstantiate(): void
     {
         // Create collection.
+        /** @var Collection<Product> */
         $collection = new Collection(
             2,
             4,
@@ -86,10 +88,12 @@ class CollectionTest extends TestCase
         }
 
         // Test index access.
-        foreach ($expected as $i => $v) {
-            $this->assertSame($v[0], $collection->get($i)->code ?? null);
-            $this->assertSame($v[1], $collection->get($i)->price ?? null);
+        foreach ($expected as $i => [$code, $price]) {
+            $this->assertTrue($collection->has($i));
+            $this->assertSame($code, $collection->get($i)->code ?? null);
+            $this->assertSame($price, $collection->get($i)->price ?? null);
         }
+        $this->assertFalse($collection->has($i + 1));
     }
 
     protected function createProduct(string $code, float $price): Product

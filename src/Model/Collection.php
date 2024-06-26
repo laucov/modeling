@@ -111,6 +111,16 @@ class Collection implements \Countable, \Iterator
     }
 
     /**
+     * Returns whether the specified offset exists.
+     * 
+     * @return T
+     */
+    public function has(int $offset): mixed
+    {
+        return array_key_exists($offset, $this->entities);
+    }
+
+    /**
      * Returns the index of the current entity.
      */
     public function key(): int
