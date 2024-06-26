@@ -352,6 +352,18 @@ abstract class AbstractModel
     }
 
     /**
+     * Filter the next list/retrieval searching a specific column.
+     */
+    public function search(
+        string $column_name,
+        string $search,
+        SearchMode $mode,
+    ): static {
+        $this->table->filter($column_name, $mode->value, $search);
+        return $this;
+    }
+
+    /**
      * Sort the next list/retrieval.
      */
     public function sort(string $column_name, bool $descending = false): static

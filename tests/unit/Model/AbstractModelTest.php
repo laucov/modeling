@@ -36,6 +36,8 @@ use Laucov\Modeling\Model\AbstractModel;
 use Laucov\Modeling\Model\BatchUpdateResult;
 use Laucov\Modeling\Model\Collection;
 use Laucov\Modeling\Model\DeletionFilter;
+use Laucov\Modeling\Model\SearchMode;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 require __DIR__ . '/includes/Airplane.php';
@@ -81,6 +83,34 @@ class AbstractModelTest extends TestCase
                 ['PA-46-500TP', '72-500'],
                 ['A320-251N', 'foo', 'bar'],
             ],
+        ];
+    }
+
+    /**
+     * Provides data for testing the model search features.
+     */
+    public function searchProvider(): array
+    {
+        return [
+            [
+                [2, 3, 4, 6, 10, 12, 13],
+                [['manufacturer', 'A', SearchMode::STARTS_WITH]],
+            ],
+            [
+                [8, 12],
+                [
+                    ['registration', 'C', SearchMode::CONTAINS],
+                    ['manufacturer', 'us', SearchMode::CONTAINS],
+                ],
+            ],
+            [[10], [['model', '500', SearchMode::ENDS_WITH]]],
+            [
+                [3, 13],
+                [
+                    ['registration', 'P', SearchMode::STARTS_WITH],
+                    ['model', 'A320-251N', SearchMode::EQUAL_TO],
+                ],
+            ]
         ];
     }
 
@@ -629,6 +659,34 @@ class AbstractModelTest extends TestCase
     }
 
     /**
+     * @covers ::search
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
+     * @uses Laucov\Modeling\Model\AbstractModel::getEntities
+     * @uses Laucov\Modeling\Model\AbstractModel::list
+     * @uses Laucov\Modeling\Model\AbstractModel::listAll
+     * @uses Laucov\Modeling\Model\AbstractModel::prefix
+     * @uses Laucov\Modeling\Model\AbstractModel::resetPagination
+     * @uses Laucov\Modeling\Model\Collection::__construct
+     * @uses Laucov\Modeling\Model\Collection::get
+     * @uses Laucov\Modeling\Model\Collection::has
+     * @dataProvider searchProvider
+     */
+    public function testCanSearch(array $expected_ids, array $search): void
+    {
+        foreach ($search as [$name, $text, $mode]) {
+            $this->airplanes->search($name, $text, $mode);
+        }
+        $records = $this->airplanes->listAll();
+        foreach ($expected_ids as $offset => $id) {
+            $this->assertTrue($records->has($offset));
+            $this->assertSame($id, $records->get($offset)->id);
+        }
+    }
+
+    /**
      * @covers ::insert
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::cacheRules
@@ -678,6 +736,7 @@ class AbstractModelTest extends TestCase
     public function testFiltersSoftDeletedRecords(): void
     {
         // Create mock for model.
+        /** @var AirplaneModel & MockObject */
         $model_mock = $this
             ->getMockBuilder(AirplaneModel::class)
             ->setConstructorArgs([$this->conn])
