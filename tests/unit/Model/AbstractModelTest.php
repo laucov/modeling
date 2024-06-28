@@ -116,11 +116,11 @@ class AbstractModelTest extends TestCase
 
     /**
      * @covers ::createEntity
+     * @covers ::createEntityFromArray
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::__set
      * @uses Laucov\Modeling\Entity\AbstractEntity::createFromArray
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
-     * @uses Laucov\Modeling\Model\AbstractModel::createEntityFromArray
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
     public function testCanCreateEntity(): void
@@ -506,6 +506,7 @@ class AbstractModelTest extends TestCase
 
     /**
      * @covers ::__construct
+     * @covers ::applyDeletionFilter
      * @covers ::getEntities
      * @covers ::list
      * @covers ::listAll
@@ -523,7 +524,6 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::__set
      * @uses Laucov\Modeling\Entity\Relationship::__construct
-     * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      */
     public function testCanList(): void
