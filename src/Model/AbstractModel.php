@@ -111,6 +111,11 @@ abstract class AbstractModel
     protected array $selecting = [];
 
     /**
+     * Whether to skip the deletion filter.
+     */
+    protected bool $skipDeletionFilter = false;
+
+    /**
      * Sorting calls.
      * 
      * @var array<array{string, string}>
@@ -481,6 +486,11 @@ abstract class AbstractModel
      */
     public function applyDeletionFilter(): void
     {
+        // Check if we're skipping the deletion filter.
+        if ($this->skipDeletionFilter) {
+            return;
+        }
+
         // Set constraints according to the filter mode.
         switch ($this->deletionFilter) {
             case DeletionFilter::HIDE:
@@ -583,11 +593,10 @@ abstract class AbstractModel
         }
         $this->selecting = [];
 
-        // Clear joined relationships table list.
-        $this->joinedRelationships = [];
-
-        // Apply filters and fetch.
+        // Apply deletion filter.
         $this->applyDeletionFilter();
+
+        // Fetch records.
         $records = $this->table->selectRecords($this->entityName);
 
         // Query related records.
@@ -596,6 +605,9 @@ abstract class AbstractModel
                 $this->fetchRelationship($records, ...$arguments);
             }
         }
+
+        // Clear relationships runtime data.
+        $this->joinedRelationships = [];
         $this->requestedRelationships = [];
 
         return $records;
@@ -628,15 +640,13 @@ abstract class AbstractModel
     protected function list(): Collection
     {
         // Apply deletion filter without resetting.
-        $previous_kdf_value = $this->keepDeletionFilter;
-        $this->keepDeletionFilter = true;
         $this->applyDeletionFilter();
-        $this->keepDeletionFilter = $previous_kdf_value;
 
         // Count all filtered records.
-        $this->table->autoReset = false;
         $primary_key = $this->prefix($this->primaryKey);
+        $this->table->autoReset = false;
         $filtered = $this->table->countRecords($primary_key);
+        $this->table->autoReset = true;
 
         // Paginate.
         if ($this->pageLength !== null) {
@@ -647,10 +657,12 @@ abstract class AbstractModel
         }
 
         // Get records.
-        $this->table->autoReset = true;
+        $this->skipDeletionFilter = true;
         $array = $this->getEntities();
+        $this->skipDeletionFilter = false;
 
         // Count total table records.
+        // @todo Apply deletion filter???
         $stored = $this->table->countRecords($this->primaryKey);
 
         // Create collection.
