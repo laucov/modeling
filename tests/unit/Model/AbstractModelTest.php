@@ -177,6 +177,7 @@ class AbstractModelTest extends TestCase
         $this->airplanes->keepDeletionFilter = true;
 
         // Check active records.
+        $this->assertTrue($this->airplanes->exists()); // Active records exist
         $this->assertFalse($this->airplanes->exists('999')); // Never existed
         $this->assertFalse($this->airplanes->exists('1')); // Erased
         $this->assertFalse($this->airplanes->exists('1', '2')); // Erased + Deleted
@@ -186,6 +187,7 @@ class AbstractModelTest extends TestCase
 
         // Check all records.
         $this->airplanes->filterDeleted(DeletionFilter::SHOW);
+        $this->assertTrue($this->airplanes->exists()); // Records exist
         $this->assertFalse($this->airplanes->exists('999'));
         $this->assertFalse($this->airplanes->exists('1'));
         $this->assertFalse($this->airplanes->exists('1', '2'));
@@ -195,12 +197,20 @@ class AbstractModelTest extends TestCase
 
         // Check deleted records.
         $this->airplanes->filterDeleted(DeletionFilter::SHOW_EXCLUSIVELY);
+        $this->assertTrue($this->airplanes->exists()); // Deleted records exist
         $this->assertFalse($this->airplanes->exists('999'));
         $this->assertFalse($this->airplanes->exists('1'));
         $this->assertFalse($this->airplanes->exists('1', '2'));
         $this->assertTrue($this->airplanes->exists('2', '3'));
         $this->assertFalse($this->airplanes->exists('3', '4'));
         $this->assertFalse($this->airplanes->exists('4', '5'));
+
+        // Delete all.
+        $this->airplanes->filterDeleted(DeletionFilter::HIDE);
+        $this->airplanes->delete(...array_map('strval', range(1, 13)));
+        $this->assertFalse($this->airplanes->exists()); // No active records
+        $this->airplanes->filterDeleted(DeletionFilter::SHOW);
+        $this->assertTrue($this->airplanes->exists()); // No active records
 
         // Turn on filter resetting again.
         $this->airplanes->keepDeletionFilter = false;

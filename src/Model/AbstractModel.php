@@ -219,13 +219,13 @@ abstract class AbstractModel
      */
     public function exists(string ...$ids): bool
     {
+        $expected = count($ids);
+        if ($expected > 0) {
+            $this->table->filter($this->primaryKey, '=', $ids);
+        }
         $this->applyDeletionFilter();
-
-        $count = $this->table
-            ->filter($this->primaryKey, '=', $ids)
-            ->countRecords($this->primaryKey);
-
-        return $count === count($ids);
+        $actual = $this->table->countRecords($this->primaryKey);
+        return $expected > 0 ? $expected === $actual : $actual > 0;
     }
 
     /**
