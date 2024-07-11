@@ -40,6 +40,13 @@ use PHPUnit\Framework\TestCase;
 class CollectionTest extends TestCase
 {
     /**
+     * Entity mocks.
+     * 
+     * @var array<AbstractEntity>
+     */
+    protected array $entities;
+
+    /**
      * @covers ::__construct
      * @covers ::count
      * @covers ::current
@@ -51,18 +58,17 @@ class CollectionTest extends TestCase
      * @covers ::valid
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      */
-    public function testCanInstantiate(): void
+    public function testCanIterate(): void
     {
         // Create collection.
-        /** @var Collection<Product> */
         $collection = new Collection(
             2,
             4,
             7,
             16,
-            $this->createProduct('ProdA', 23.99),
-            $this->createProduct('ProdB', 6.41),
-            $this->createProduct('ProdC', 1.99),
+            $this->entities[0],
+            $this->entities[1],
+            $this->entities[2],
         );
 
         // Test properties.
@@ -75,39 +81,31 @@ class CollectionTest extends TestCase
         $this->assertSame(3, count($collection));
 
         // Test iteration.
-        $actual = [];
+        $expected_index = 0;
         foreach ($collection as $i => $entity) {
-            $actual[$i][] = $entity->code;
-            $actual[$i][] = $entity->price;
-        }
-        $expected = [['ProdA', 23.99], ['ProdB', 6.41], ['ProdC', 1.99]];
-        $this->assertSameSize($expected, $actual);
-        foreach ($expected as $i => $v) {
-            $this->assertSame($v[0], $actual[$i][0] ?? null);
-            $this->assertSame($v[1], $actual[$i][1] ?? null);
-        }
-
-        // Test index access.
-        foreach ($expected as $i => [$code, $price]) {
+            $this->assertSame($expected_index, $i);
+            $this->assertSame($this->entities[$i], $entity);
             $this->assertTrue($collection->has($i));
-            $this->assertSame($code, $collection->get($i)->code ?? null);
-            $this->assertSame($price, $collection->get($i)->price ?? null);
+            $this->assertSame($this->entities[$i], $collection->get($i));
+            $expected_index++;
         }
         $this->assertFalse($collection->has($i + 1));
     }
 
-    protected function createProduct(string $code, float $price): Product
+    /**
+     * This method is called before each test.
+     */
+    protected function setUp(): void
     {
-        $product = new Product();
-        $product->code = $code;
-        $product->price = $price;
-
-        return $product;
+        $this->entities = [
+            $this->createMock(AbstractEntity::class),
+            $this->createMock(AbstractEntity::class),
+            $this->createMock(AbstractEntity::class),
+            $this->createMock(AbstractEntity::class),
+            $this->createMock(AbstractEntity::class),
+            $this->createMock(AbstractEntity::class),
+            $this->createMock(AbstractEntity::class),
+            $this->createMock(AbstractEntity::class),
+        ];
     }
-}
-
-class Product extends AbstractEntity
-{
-    public string $code;
-    public float $price = 0.00;
 }
