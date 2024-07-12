@@ -32,6 +32,7 @@ namespace Tests\Unit\Model;
 
 use Laucov\Modeling\Model\Collection;
 use Laucov\Modeling\Entity\AbstractEntity;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -42,7 +43,7 @@ class CollectionTest extends TestCase
     /**
      * Entity mocks.
      * 
-     * @var array<AbstractEntity>
+     * @var array<CollectionTestEntity&MockObject>
      */
     protected array $entities;
 
@@ -93,19 +94,39 @@ class CollectionTest extends TestCase
     }
 
     /**
+     * Create a test entity.
+     */
+    protected function mockEntity(): CollectionTestEntity&MockObject
+    {
+        return $this->createMock(CollectionTestEntity::class);
+    }
+
+    /**
      * This method is called before each test.
      */
     protected function setUp(): void
     {
         $this->entities = [
-            $this->createMock(AbstractEntity::class),
-            $this->createMock(AbstractEntity::class),
-            $this->createMock(AbstractEntity::class),
-            $this->createMock(AbstractEntity::class),
-            $this->createMock(AbstractEntity::class),
-            $this->createMock(AbstractEntity::class),
-            $this->createMock(AbstractEntity::class),
-            $this->createMock(AbstractEntity::class),
+            $this->mockEntity(),
+            $this->mockEntity(),
+            $this->mockEntity(),
+            $this->mockEntity(),
+            $this->mockEntity(),
+            $this->mockEntity(),
+            $this->mockEntity(),
+            $this->mockEntity(),
         ];
     }
+}
+
+/**
+ * Test entity to mock.
+ * 
+ * Includes public properties to test.
+ */
+class CollectionTestEntity extends AbstractEntity
+{
+    public string $name;
+    public int $age;
+    public float $balance;
 }
