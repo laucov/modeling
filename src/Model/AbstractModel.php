@@ -29,6 +29,7 @@
 namespace Laucov\Modeling\Model;
 
 use Laucov\Db\Data\Connection;
+use Laucov\Db\Data\ConnectionFactory;
 use Laucov\Db\Query\Table;
 use Laucov\Modeling\Entity\AbstractEntity;
 use Laucov\Modeling\Entity\ObjectReader;
@@ -45,6 +46,16 @@ abstract class AbstractModel
      * Whether to reset the deletion filter upon the next query.
      */
     public bool $keepDeletionFilter = false;
+
+    /**
+     * Connection instance.
+     */
+    protected Connection $connection;
+
+    /**
+     * Connection name.
+     */
+    protected null|string $connectionName = null;
 
     /**
      * Current deletion filter.
@@ -141,13 +152,20 @@ abstract class AbstractModel
      * Create the model instance.
      */
     public function __construct(
+        // /**
+        //  * Database connection interface.
+        //  */
+        // protected Connection $connection,
+
         /**
-         * Database connection interface.
+         * Connection factory.
          */
-        protected Connection $connection,
+        protected ConnectionFactory $connections,
     ) {
         // Store a table instance.
-        $this->table = new Table($connection, $this->tableName);
+        $this->connection = $this->connections->getConnection($this->connectionName);
+        $this->table = $this->connections->getTable($this->tableName, $this->connectionName);
+        // $this->table = new Table($connection, $this->tableName);
 
         // Store entity's key names.
         $this->entityKeys = [];
@@ -523,7 +541,7 @@ abstract class AbstractModel
         null|callable $callback,
     ): void {
         // Extract arguments and get the model instance.
-        $model = new $model_name($this->connection);
+        $model = new $model_name($this->connections);
 
         // Set model filters.
         $values = array_map(fn ($e) => $e->{$left_key}, $entities);

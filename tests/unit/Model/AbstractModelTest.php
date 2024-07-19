@@ -31,6 +31,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Model;
 
 use Laucov\Db\Data\Connection;
+use Laucov\Db\Data\ConnectionFactory;
 use Laucov\Db\Data\Driver\DriverFactory;
 use Laucov\Modeling\Model\AbstractModel;
 use Laucov\Modeling\Model\BatchUpdateResult;
@@ -63,6 +64,11 @@ class AbstractModelTest extends TestCase
      * Connection instance.
      */
     protected Connection $conn;
+
+    /**
+     * Connection factory instance.
+     */
+    protected ConnectionFactory $conns;
 
     /**
      * Flight model.
@@ -571,7 +577,7 @@ class AbstractModelTest extends TestCase
         }
 
         // Paginate - test with filter.
-        $model = new class ($this->conn) extends AirplaneModel {
+        $model = new class ($this->conns) extends AirplaneModel {
             /**
              * List all planes for a specific manufacturer.
              * 
@@ -749,7 +755,7 @@ class AbstractModelTest extends TestCase
         /** @var AirplaneModel & MockObject */
         $model_mock = $this
             ->getMockBuilder(AirplaneModel::class)
-            ->setConstructorArgs([$this->conn])
+            ->setConstructorArgs([$this->conns])
             ->onlyMethods(['applyDeletionFilter'])
             ->getMock();
         $model_mock
@@ -780,7 +786,7 @@ class AbstractModelTest extends TestCase
     public function testFailsIfRetrievesDuplicatedEntries(): void
     {
         // Create model with faulty primary key.
-        $model = new class ($this->conn) extends AirplaneModel {
+        $model = new class ($this->conns) extends AirplaneModel {
             protected string $primaryKey = 'model';
         };
 
@@ -807,7 +813,7 @@ class AbstractModelTest extends TestCase
         array $faulty_ids,
     ): void {
         // Create model with faulty primary key.
-        $model = new class ($this->conn) extends AirplaneModel {
+        $model = new class ($this->conns) extends AirplaneModel {
             protected string $primaryKey = 'model';
         };
 
@@ -841,7 +847,7 @@ class AbstractModelTest extends TestCase
         // Create custom model.
         // Use AirplaneWithSetter to track unused fetched columns.
         /** @var AbstractModel<AirplaneWithSetter> */
-        $model = new class ($this->conn) extends AbstractModel {
+        $model = new class ($this->conns) extends AbstractModel {
             protected string $entityName = AirplaneWithSetter::class;
             protected string $primaryKey = 'id';
             protected string $tableName = 'airplanes';
@@ -912,8 +918,12 @@ class AbstractModelTest extends TestCase
      */
     protected function setUp(): void
     {
-        // Create connection instance and table.
-        $this->conn = new Connection(new DriverFactory(), 'sqlite::memory:');
+        // Create connection.
+        $drivers = new DriverFactory();
+        $this->conns = new ConnectionFactory($drivers);
+        $this->conn = $this->conns
+            ->setConnection('main', 'sqlite::memory:')
+            ->getConnection();
 
         // Create tables.
         $this->conn
@@ -1013,7 +1023,7 @@ class AbstractModelTest extends TestCase
             SQL);
 
         // Create model instances.
-        $this->airplanes = new AirplaneModel($this->conn);
-        $this->flights = new FlightModel($this->conn);
+        $this->airplanes = new AirplaneModel($this->conns);
+        $this->flights = new FlightModel($this->conns);
     }
 }
