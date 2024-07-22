@@ -82,32 +82,11 @@ abstract class AbstractEntity
     protected AbstractEntity $cache;
 
     /**
-     * Errors found.
+     * Stored errors.
      * 
      * @var array<string, RuleInterface[]>
      */
     protected array $errors = [];
-
-    /**
-     * Reflection properties.
-     * 
-     * @var array<\ReflectionProperty>
-     */
-    protected array $properties;
-
-    /**
-     * Property names.
-     * 
-     * @var array<string>
-     */
-    protected array $propertyNames;
-
-    /**
-     * Cached property rules.
-     * 
-     * @var array<string, Ruleset>
-     */
-    protected array $rules;
 
     /**
      * Create the entity instance.
@@ -174,6 +153,24 @@ abstract class AbstractEntity
     }
 
     /**
+     * Set errors for the specified property.
+     */
+    public function resetErrors(): static
+    {
+        $this->errors = [];
+        return $this;
+    }
+
+    /**
+     * Set errors for the specified property.
+     */
+    public function setErrors(string $property_name, Error ...$errors): static
+    {
+        $this->errors[$property_name] = $errors;
+        return $this;
+    }
+
+    /**
      * Get the entity's data as an array.
      * 
      * @var array<string, mixed>
@@ -181,124 +178,5 @@ abstract class AbstractEntity
     public function toArray(): array
     {
         return ObjectReader::toArray($this);
-    }
-
-    /**
-     * Validate current values.
-     */
-    public function validate(): bool
-    {
-        // Reset errors and get stored values.
-        $this->errors = [];
-
-        // Validate each value.
-        foreach ($this->getPropertyNames() as $name) {
-            $value = $this->$name ?? null;
-            $ruleset = $this->getRuleset($name);
-            if (!$ruleset->validate($value)) {
-                $this->errors[$name] = $ruleset->getErrors();
-            }
-        }
-
-        return count($this->errors) === 0;
-    }
-
-    /**
-     * Cache the entity's rules.
-     */
-    protected function cacheRules(): void
-    {
-        // Extract each properties' rules.
-        foreach ($this->getProperties() as $prop) {
-            // Get name.
-            $name = $prop->getName();
-            // Get attributes.
-            $attributes = $prop->getAttributes();
-            // Create ruleset.
-            $ruleset = new Ruleset();
-            $ruleset->setData($this);
-            $this->rules[$name] = $ruleset;
-            // Process attributes.
-            $is_required = false;
-            $required_with = null;
-            $obligatoriness_message = null;
-            /** @var null|string|RuleInterface */
-            $rule = null;
-            foreach ($attributes as $attr) {
-                if (is_a($attr->getName(), Required::class, true)) {
-                    // Remember obligatoriness.
-                    /** @var Required */
-                    $attr = $attr->newInstance();
-                    $rule = 'required';
-                    $is_required = true;
-                    if (count($attr->with)) {
-                        $required_with = $attr->with;
-                    }
-                } elseif (is_a($attr->getName(), RuleInterface::class, true)) {
-                    // Add rule.
-                    /** @var RuleInterface */
-                    $attr = $attr->newInstance();
-                    $ruleset->addRule($attr);
-                    $rule = $attr;
-                } elseif (is_a($attr->getName(), ErrorMessage::class, true)) {
-                    // Add message.
-                    /** @var ErrorMessage */
-                    $attr = $attr->newInstance();
-                    if ($rule === 'required') {
-                        $obligatoriness_message = $attr->content;
-                    } elseif ($rule instanceof RuleInterface) {
-                        $rule->setMessage($attr->content);
-                    }
-                }
-            }
-            // Set obligatoriness.
-            if ($is_required) {
-                $ruleset->require($required_with, $obligatoriness_message);
-            }
-        }
-    }
-
-    /**
-     * Get all the entity's public property reflections.
-     * 
-     * @return array<\ReflectionProperty>
-     */
-    protected function getProperties(): array
-    {
-        // Cache properties.
-        if (!isset($this->properties)) {
-            $reflection = new \ReflectionObject($this);
-            $filter = \ReflectionProperty::IS_PUBLIC;
-            $this->properties = $reflection->getProperties($filter);
-        }
-
-        return $this->properties;
-    }
-
-    /**
-     * Get all the entity's public property names.
-     */
-    protected function getPropertyNames(): array
-    {
-        // Cache property names.
-        if (!isset($this->propertyNames)) {
-            $props = $this->getProperties();
-            $this->propertyNames = array_map(fn ($p) => $p->getName(), $props);
-        }
-
-        return $this->propertyNames;
-    }
-
-    /**
-     * Get rules for a specific property.
-     */
-    protected function getRuleset(string $property_name): Ruleset
-    {
-        // Cache rules.
-        if (!isset($this->rules)) {
-            $this->cacheRules();
-        }
-
-        return $this->rules[$property_name];
     }
 }

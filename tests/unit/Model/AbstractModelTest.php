@@ -420,6 +420,9 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
+     * @uses Laucov\Modeling\Entity\AbstractEntity::hasErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::resetErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::setErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::toArray
      * @uses Laucov\Modeling\Validation\EntityValidator::setEntity
      * @uses Laucov\Modeling\Validation\EntityValidator::validate
@@ -710,6 +713,8 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
+     * @uses Laucov\Modeling\Entity\AbstractEntity::hasErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::resetErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::toArray
      * @uses Laucov\Modeling\Validation\EntityValidator::setEntity
      * @uses Laucov\Modeling\Validation\EntityValidator::validate
@@ -733,6 +738,8 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
+     * @uses Laucov\Modeling\Entity\AbstractEntity::hasErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::resetErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::toArray
      * @uses Laucov\Modeling\Validation\EntityValidator::setEntity
      * @uses Laucov\Modeling\Validation\EntityValidator::validate

@@ -52,6 +52,9 @@ class EntityValidatorTest extends TestCase
      * @covers ::cacheRules
      * @covers ::getRuleset
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Entity\AbstractEntity::hasErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::resetErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::setErrors
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
@@ -123,7 +126,10 @@ class EntityValidatorTest extends TestCase
     /**
      * @covers ::cacheRules
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
-     * @uses Laucov\Modeling\Validation\EntityValidator::getErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::hasErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::resetErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::setErrors
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
@@ -150,11 +156,11 @@ class EntityValidatorTest extends TestCase
         $this->validator
             ->setEntity($entity)
             ->validate();
-        $errors_a = $this->validator->getErrors('name_a');
+        $errors_a = $entity->getErrors('name_a');
         $this->assertCount(1, $errors_a);
         $this->assertSame('required', $errors_a[0]->rule);
         $this->assertNull($errors_a[0]->message);
-        $errors_b = $this->validator->getErrors('name_b');
+        $errors_b = $entity->getErrors('name_b');
         $this->assertCount(1, $errors_b);
         $this->assertSame('required', $errors_b[0]->rule);
         $this->assertSame('This field is required!', $errors_b[0]->message);
@@ -163,25 +169,27 @@ class EntityValidatorTest extends TestCase
         $entity->name_a = 'Very long value...';
         $entity->name_b = 'Another very long value...';
         $this->validator->validate();
-        $errors_a = $this->validator->getErrors('name_a');
+        $errors_a = $entity->getErrors('name_a');
         $this->assertCount(1, $errors_a);
         $this->assertSame(Length::class, $errors_a[0]->rule);
         $this->assertNull($errors_a[0]->message);
-        $errors_b = $this->validator->getErrors('name_b');
+        $errors_b = $entity->getErrors('name_b');
         $this->assertCount(1, $errors_b);
         $this->assertSame(Length::class, $errors_b[0]->rule);
         $this->assertSame('Value too long!', $errors_b[0]->message);
     }
 
     /**
-     * @covers ::hasErrors
-     * @covers ::getErrorKeys
-     * @covers ::getErrors
      * @covers ::getProperties
      * @covers ::getPropertyNames
      * @covers ::validate
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::cache
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getErrorKeys
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::hasErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::resetErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::setErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::toArray
      * @uses Laucov\Modeling\Validation\EntityValidator::cacheRules
      * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
@@ -247,12 +255,14 @@ class EntityValidatorTest extends TestCase
      * @covers ::validate
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Validation\EntityValidator::cacheRules
-     * @uses Laucov\Modeling\Validation\EntityValidator::getErrorKeys
-     * @uses Laucov\Modeling\Validation\EntityValidator::getErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getErrorKeys
+     * @uses Laucov\Modeling\Entity\AbstractEntity::getErrors
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
-     * @uses Laucov\Modeling\Validation\EntityValidator::hasErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::hasErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::resetErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::setErrors
      * @uses Laucov\Modeling\Validation\EntityValidator::setEntity
      * @uses Laucov\Modeling\Entity\Required::__construct
      */
@@ -292,15 +302,15 @@ class EntityValidatorTest extends TestCase
         // Assert that has errors.
         if ($expected_success) {
             $message = 'Assert that the entity doesn\'t have errors.';
-            $this->assertFalse($this->validator->hasErrors(), $message);
+            $this->assertFalse($entity->hasErrors(), $message);
         } else {
             $message = 'Assert that the entity has errors.';
-            $this->assertTrue($this->validator->hasErrors(), $message);
+            $this->assertTrue($entity->hasErrors(), $message);
         }
 
         // Check error keys.
         $expected_keys = array_keys($expected_errors);
-        $actual_keys = $this->validator->getErrorKeys();
+        $actual_keys = $entity->getErrorKeys();
         $missing = array_diff($expected_keys, $actual_keys);
         if (count($missing) > 0) {
             $message = 'Missing entity error keys: %s.';
@@ -321,7 +331,7 @@ class EntityValidatorTest extends TestCase
         // Compare property names.
         $err_tpl = 'Failed to assert that entity property "%s" %s errors.';
         foreach ($property_names as $name) {
-            $has_errors = $this->validator->hasErrors($name);
+            $has_errors = $entity->hasErrors($name);
             $expects_errors = array_key_exists($name, $expected_errors);
             if ($has_errors && !$expects_errors) {
                 $this->fail(sprintf($err_tpl, $name, 'does not have'));
@@ -332,7 +342,7 @@ class EntityValidatorTest extends TestCase
 
         // Check property errors.
         foreach ($expected_errors as $name => $expected_classes) {
-            $actual_errors = $this->validator->getErrors($name);
+            $actual_errors = $entity->getErrors($name);
             $this->assertIsArray($actual_errors);
             $msg_tpl = 'Assert that entity property "%s" #%s error is %s.';
             foreach ($expected_classes as $i => $expected_class) {

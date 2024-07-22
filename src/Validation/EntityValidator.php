@@ -31,7 +31,6 @@ namespace Laucov\Modeling\Validation;
 use Laucov\Modeling\Entity\AbstractEntity;
 use Laucov\Modeling\Entity\ErrorMessage;
 use Laucov\Modeling\Entity\Required;
-use Laucov\Modeling\Validation\Traits\ErrorGetterTrait;
 use Laucov\Validation\Interfaces\RuleInterface;
 use Laucov\Validation\Ruleset;
 
@@ -40,8 +39,6 @@ use Laucov\Validation\Ruleset;
  */
 class EntityValidator
 {
-    use ErrorGetterTrait;
-    
     /**
      * Active entity.
      */
@@ -86,18 +83,18 @@ class EntityValidator
     public function validate(): bool
     {
         // Reset errors and get stored values.
-        $this->errors = [];
+        $this->entity->resetErrors();
 
         // Validate each value.
         foreach ($this->getPropertyNames() as $name) {
             $value = $this->entity->$name ?? null;
             $ruleset = $this->getRuleset($name);
             if (!$ruleset->validate($value)) {
-                $this->errors[$name] = $ruleset->getErrors();
+                $this->entity->setErrors($name, ...$ruleset->getErrors());
             }
         }
 
-        return count($this->errors) === 0;
+        return !$this->entity->hasErrors();
     }
 
     /**
