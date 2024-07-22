@@ -415,13 +415,14 @@ class AbstractModelTest extends TestCase
      * @covers ::withValue
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::__set
-     * @uses Laucov\Modeling\Entity\AbstractEntity::cacheRules
+     * @uses Laucov\Modeling\Validation\EntityValidator::cacheRules
      * @uses Laucov\Modeling\Entity\AbstractEntity::getEntries
-     * @uses Laucov\Modeling\Entity\AbstractEntity::getProperties
-     * @uses Laucov\Modeling\Entity\AbstractEntity::getPropertyNames
-     * @uses Laucov\Modeling\Entity\AbstractEntity::getRuleset
+     * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
+     * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
+     * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
      * @uses Laucov\Modeling\Entity\AbstractEntity::toArray
-     * @uses Laucov\Modeling\Entity\AbstractEntity::validate
+     * @uses Laucov\Modeling\Validation\EntityValidator::setEntity
+     * @uses Laucov\Modeling\Validation\EntityValidator::validate
      * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
@@ -705,12 +706,13 @@ class AbstractModelTest extends TestCase
     /**
      * @covers ::insert
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
-     * @uses Laucov\Modeling\Entity\AbstractEntity::cacheRules
-     * @uses Laucov\Modeling\Entity\AbstractEntity::getProperties
-     * @uses Laucov\Modeling\Entity\AbstractEntity::getPropertyNames
-     * @uses Laucov\Modeling\Entity\AbstractEntity::getRuleset
+     * @uses Laucov\Modeling\Validation\EntityValidator::cacheRules
+     * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
+     * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
+     * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
      * @uses Laucov\Modeling\Entity\AbstractEntity::toArray
-     * @uses Laucov\Modeling\Entity\AbstractEntity::validate
+     * @uses Laucov\Modeling\Validation\EntityValidator::setEntity
+     * @uses Laucov\Modeling\Validation\EntityValidator::validate
      * @uses Laucov\Modeling\Entity\ObjectReader::toArray
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
@@ -727,12 +729,13 @@ class AbstractModelTest extends TestCase
     /**
      * @covers ::insertBatch
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
-     * @uses Laucov\Modeling\Entity\AbstractEntity::cacheRules
-     * @uses Laucov\Modeling\Entity\AbstractEntity::getProperties
-     * @uses Laucov\Modeling\Entity\AbstractEntity::getPropertyNames
-     * @uses Laucov\Modeling\Entity\AbstractEntity::getRuleset
+     * @uses Laucov\Modeling\Validation\EntityValidator::cacheRules
+     * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
+     * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
+     * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
      * @uses Laucov\Modeling\Entity\AbstractEntity::toArray
-     * @uses Laucov\Modeling\Entity\AbstractEntity::validate
+     * @uses Laucov\Modeling\Validation\EntityValidator::setEntity
+     * @uses Laucov\Modeling\Validation\EntityValidator::validate
      * @uses Laucov\Modeling\Entity\ObjectReader::toArray
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::prefix

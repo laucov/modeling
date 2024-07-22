@@ -34,6 +34,7 @@ use Laucov\Db\Query\Table;
 use Laucov\Modeling\Entity\AbstractEntity;
 use Laucov\Modeling\Entity\ObjectReader;
 use Laucov\Modeling\Entity\Relationship;
+use Laucov\Modeling\Validation\EntityValidator;
 
 /**
  * Provides table data in form of entities and collections.
@@ -149,14 +150,14 @@ abstract class AbstractModel
     protected array $updateValues = [];
 
     /**
+     * Entity validator.
+     */
+    protected EntityValidator $validator;
+
+    /**
      * Create the model instance.
      */
     public function __construct(
-        // /**
-        //  * Database connection interface.
-        //  */
-        // protected Connection $connection,
-
         /**
          * Connection factory.
          */
@@ -165,7 +166,7 @@ abstract class AbstractModel
         // Store a table instance.
         $this->connection = $this->connections->getConnection($this->connectionName);
         $this->table = $this->connections->getTable($this->tableName, $this->connectionName);
-        // $this->table = new Table($connection, $this->tableName);
+        $this->validator = new EntityValidator();
 
         // Store entity's key names.
         $this->entityKeys = [];
@@ -263,7 +264,7 @@ abstract class AbstractModel
     public function insert(mixed $entity): bool
     {
         // Validate entity.
-        if (!$entity->validate()) {
+        if (!$this->validator->setEntity($entity)->validate()) {
             return false;
         }
 
@@ -285,13 +286,11 @@ abstract class AbstractModel
     public function insertBatch(AbstractEntity ...$entities): bool
     {
         // Validate each entity.
-        $is_valid = true;
+        $results = [];
         foreach ($entities as $entity) {
-            if (!$entity->validate() && $is_valid) {
-                $is_valid = false;
-            }
+            $results[] = $this->validator->setEntity($entity)->validate();
         }
-        if (!$is_valid) {
+        if (in_array(false, $results, true)) {
             return false;
         }
 
@@ -403,7 +402,7 @@ abstract class AbstractModel
     public function update(mixed $entity): null|bool
     {
         // Validate entity.
-        if (!$entity->validate()) {
+        if (!$this->validator->setEntity($entity)->validate()) {
             return false;
         }
 
@@ -433,30 +432,30 @@ abstract class AbstractModel
         }
 
         // Get records.
-        $records = $this->table
+        $entities = $this->table
             ->filter($this->primaryKey, '=', $ids)
             ->selectRecords($this->entityName);
-        if (count($records) !== count($ids)) {
+        if (count($entities) !== count($ids)) {
             $this->updateValues = [];
             return BatchUpdateResult::NOT_FOUND;
         }
 
         // Iterate records.
         $ids = [];
-        foreach ($records as $record) {
+        foreach ($entities as $entity) {
             // Set values.
             foreach ($this->updateValues as $name => $value) {
-                $record->$name = $value;
+                $entity->$name = $value;
             }
             // Validate.
-            if (!$record->validate()) {
+            if (!$this->validator->setEntity($entity)->validate()) {
                 $this->updateValues = [];
                 return BatchUpdateResult::INVALID_VALUES;
             }
             // Count entries.
             // Ignore records that wouldn't change.
-            if (ObjectReader::count($record->getEntries()) > 0) {
-                $ids[] = (string) $record->{$this->primaryKey};
+            if (ObjectReader::count($entity->getEntries()) > 0) {
+                $ids[] = (string) $entity->{$this->primaryKey};
             }
         }
 
