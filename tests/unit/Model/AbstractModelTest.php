@@ -127,6 +127,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Entity\AbstractEntity::__set
      * @uses Laucov\Modeling\Entity\AbstractEntity::createFromArray
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
     public function testCanCreateEntity(): void
@@ -166,6 +167,7 @@ class AbstractModelTest extends TestCase
      * @covers ::filterDeleted
      * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
     public function testCanDeleteAndErase(): void
@@ -223,6 +225,7 @@ class AbstractModelTest extends TestCase
     }
 
     /**
+     * @covers ::createModel
      * @covers ::fetchRelationship
      * @covers ::getEntities
      * @covers ::relateOneToMany
@@ -231,6 +234,8 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::createCollection
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
@@ -339,6 +344,8 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::createCollection
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
      * @uses Laucov\Modeling\Model\AbstractModel::list
@@ -416,6 +423,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::__set
      * @uses Laucov\Modeling\Validation\EntityValidator::cacheRules
+     * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
      * @uses Laucov\Modeling\Entity\AbstractEntity::getEntries
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
@@ -429,6 +437,8 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::createCollection
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
@@ -527,6 +537,8 @@ class AbstractModelTest extends TestCase
     /**
      * @covers ::__construct
      * @covers ::applyDeletionFilter
+     * @covers ::createCollection
+     * @covers ::createValidator
      * @covers ::getEntities
      * @covers ::list
      * @covers ::listAll
@@ -630,6 +642,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
@@ -683,6 +696,8 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::createCollection
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::list
@@ -710,6 +725,7 @@ class AbstractModelTest extends TestCase
      * @covers ::insert
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Validation\EntityValidator::cacheRules
+     * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
@@ -720,6 +736,8 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Validation\EntityValidator::validate
      * @uses Laucov\Modeling\Entity\ObjectReader::toArray
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::createCollection
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
     public function testChecksIfInsertedEntitiesAreEmpty(): void
@@ -735,6 +753,7 @@ class AbstractModelTest extends TestCase
      * @covers ::insertBatch
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Validation\EntityValidator::cacheRules
+     * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
@@ -745,6 +764,8 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Validation\EntityValidator::validate
      * @uses Laucov\Modeling\Entity\ObjectReader::toArray
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::createCollection
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
     public function testChecksIfInsertedEntityBatchIsEmpty(): void
@@ -788,6 +809,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
@@ -813,6 +835,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
@@ -842,6 +865,8 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::createCollection
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
      * @uses Laucov\Modeling\Model\AbstractModel::list
      * @uses Laucov\Modeling\Model\AbstractModel::listAll

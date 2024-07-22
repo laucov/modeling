@@ -68,7 +68,7 @@ class Migrator
         protected string $tableName,
     ) {
         // Create schema instance.
-        $this->schema = new Schema($this->connection);
+        $this->schema = $this->createSchema();
     }
 
     /**
@@ -94,7 +94,10 @@ class Migrator
 
         // Downgrade all found migrations.
         foreach ($records as $record) {
-            $file = new MigrationFile($record->filename, $record->time_format);
+            $file = $this->createMigrationFile(
+                $record->filename,
+                $record->time_format,
+            );
             $migration = $this->getMigration($file);
             $migration->downgrade();
         }
@@ -153,7 +156,10 @@ class Migrator
 
         // Downgrade all found migrations.
         foreach ($records as $record) {
-            $file = new MigrationFile($record->filename, $record->time_format);
+            $file = $this->createMigrationFile(
+                $record->filename,
+                $record->time_format,
+            );
             $migration = $this->getMigration($file);
             $migration->downgrade();
         }
@@ -211,6 +217,24 @@ class Migrator
 
         // Insert upgrade records.
         $this->getTable()->insertRecords(...$records);
+    }
+
+    /**
+     * Create a `MigrationFile` object.
+     */
+    public function createMigrationFile(
+        string $filename,
+        string $date_format,
+    ): MigrationFile {
+        return new MigrationFile($filename, $date_format);
+    }
+
+    /**
+     * Create the `Schema` object.
+     */
+    public function createSchema(): Schema
+    {
+        return new Schema($this->connection);
     }
 
     /**

@@ -66,7 +66,10 @@ class MigrationRepository
         $date_format ??= $this->defaultDateFormat;
         foreach ($basenames as $basename) {
             $filename = $directory . DIRECTORY_SEPARATOR . $basename;
-            $this->files[] = new MigrationFile($filename, $date_format);
+            $this->files[] = $this->createMigrationFile(
+                $filename,
+                $date_format,
+            );
         }
 
         return $this;
@@ -81,7 +84,7 @@ class MigrationRepository
     ): static {
         // Add migration file.
         $date_format ??= $this->defaultDateFormat;
-        $this->files[] = new MigrationFile($filename, $date_format);
+        $this->files[] = $this->createMigrationFile($filename, $date_format);
 
         return $this;
     }
@@ -100,5 +103,15 @@ class MigrationRepository
         });
 
         return $files;
+    }
+
+    /**
+     * Create a `MigrationFile` object.
+     */
+    public function createMigrationFile(
+        string $filename,
+        string $date_format,
+    ): MigrationFile {
+        return new MigrationFile($filename, $date_format);
     }
 }

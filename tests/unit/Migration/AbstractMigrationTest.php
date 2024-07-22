@@ -44,6 +44,7 @@ class AbstractMigrationTest extends TestCase
 {
     /**
      * @covers ::__construct
+     * @covers ::createSchema
      */
     public function testCanMigrate(): void
     {

@@ -37,14 +37,13 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @coversDefaultClass \Laucov\Modeling\Entity\AbstractEntity
- * @covers \Laucov\Modeling\Entity\ErrorMessage
  */
 class AbstractEntityTest extends TestCase
 {
     /**
+     * @covers ::__construct
      * @covers ::cache
      * @covers ::getEntries
-     * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\ObjectReader::diff
      */
     public function testCanCacheAndGetEntries(): void
@@ -136,12 +135,12 @@ class AbstractEntityTest extends TestCase
     }
 
     /**
+     * @covers ::getErrorKeys
+     * @covers ::getErrors
+     * @covers ::hasErrors
      * @covers ::resetErrors
      * @covers ::setErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
-     * @uses Laucov\Modeling\Entity\AbstractEntity::getErrorKeys
-     * @uses Laucov\Modeling\Entity\AbstractEntity::getErrors
-     * @uses Laucov\Modeling\Entity\AbstractEntity::hasErrors
      */
     public function testCanGetAndSetErrors(): void
     {

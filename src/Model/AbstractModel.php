@@ -166,7 +166,7 @@ abstract class AbstractModel
         // Store a table instance.
         $this->connection = $this->connections->getConnection($this->connectionName);
         $this->table = $this->connections->getTable($this->tableName, $this->connectionName);
-        $this->validator = new EntityValidator();
+        $this->validator = $this->createValidator();
 
         // Store entity's key names.
         $this->entityKeys = [];
@@ -528,6 +528,49 @@ abstract class AbstractModel
     }
 
     /**
+     * Create a `Collection` object.
+     * 
+     * @template T of AbstractEntity
+     * @param T ...$entities
+     * @return Collection<T>
+     */
+    protected function createCollection(
+        int $page,
+        null|int $page_length,
+        int $filtered_count,
+        int $stored_count,
+        AbstractEntity ...$entities
+    ): Collection {
+        return new Collection(
+            $page,
+            $page_length,
+            $filtered_count,
+            $stored_count,
+            ...$entities,
+        );
+    }
+
+    /**
+     * Create an `AbstractModel` instance.
+     * 
+     * @template T of AbstractModel
+     * @param class-string<T> $class_name
+     * @return T
+     */
+    protected function createModel(string $class_name): AbstractModel
+    {
+        return new $class_name($this->connections);
+    }
+
+    /**
+     * Create the `EntityValidator` object.
+     */
+    protected function createValidator(): EntityValidator
+    {
+        return new EntityValidator();
+    }
+
+    /**
      * Find and append related records to the given entities.
      * 
      * @param array<T> $entities Entities to fetch related records.
@@ -540,7 +583,7 @@ abstract class AbstractModel
         null|callable $callback,
     ): void {
         // Extract arguments and get the model instance.
-        $model = new $model_name($this->connections);
+        $model = $this->createModel($model_name);
 
         // Set model filters.
         $values = array_map(fn ($e) => $e->{$left_key}, $entities);
@@ -570,7 +613,13 @@ abstract class AbstractModel
         foreach ($entities as $entity) {
             $related = $records[$entity->{$left_key}] ?? [];
             $count = count($related);
-            $collection = new Collection(1, null, $count, $count, ...$related);
+            $collection = $this->createCollection(
+                1,
+                null,
+                $count,
+                $count,
+                ...$related,
+            );
             $entity->{$model->tableName} = $collection;
         }
     }
@@ -683,7 +732,7 @@ abstract class AbstractModel
         $stored = $this->table->countRecords($this->primaryKey);
 
         // Create collection.
-        $collection = new Collection(
+        $collection = $this->createCollection(
             $this->pageNumber,
             $this->pageLength,
             $filtered,

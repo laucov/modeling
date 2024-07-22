@@ -42,6 +42,7 @@ class MigrationRepositoryTest extends TestCase
      * @covers ::__construct
      * @covers ::addDirectory
      * @covers ::addFile
+     * @covers ::createMigrationFile
      * @covers ::listFiles
      * @uses Laucov\Modeling\Migration\MigrationFile::__construct
      * @uses Laucov\Modeling\Migration\MigrationFile::findClassName

@@ -40,6 +40,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * @coversDefaultClass \Laucov\Modeling\Validation\EntityValidator
+ * @covers \Laucov\Modeling\Entity\ErrorMessage
  */
 class EntityValidatorTest extends TestCase
 {
@@ -51,14 +52,15 @@ class EntityValidatorTest extends TestCase
     /**
      * @covers ::cacheRules
      * @covers ::getRuleset
+     * @covers ::setEntity
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::hasErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::resetErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::setErrors
+     * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
-     * @uses Laucov\Modeling\Validation\EntityValidator::setEntity
      * @uses Laucov\Modeling\Validation\EntityValidator::validate
      * @uses Laucov\Modeling\Entity\Required::__construct
      */
@@ -130,6 +132,7 @@ class EntityValidatorTest extends TestCase
      * @uses Laucov\Modeling\Entity\AbstractEntity::hasErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::resetErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::setErrors
+     * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
@@ -180,8 +183,10 @@ class EntityValidatorTest extends TestCase
     }
 
     /**
+     * @covers ::createRuleset
      * @covers ::getProperties
      * @covers ::getPropertyNames
+     * @covers ::setEntity
      * @covers ::validate
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::cache
@@ -255,6 +260,7 @@ class EntityValidatorTest extends TestCase
      * @covers ::validate
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Validation\EntityValidator::cacheRules
+     * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
      * @uses Laucov\Modeling\Entity\AbstractEntity::getErrorKeys
      * @uses Laucov\Modeling\Entity\AbstractEntity::getErrors
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties

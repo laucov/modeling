@@ -50,7 +50,7 @@ abstract class AbstractMigration
          */
         protected Connection $connection,
     ) {
-        $this->schema = new Schema($connection);
+        $this->schema = $this->createSchema();
     }
 
     /**
@@ -62,4 +62,12 @@ abstract class AbstractMigration
      * Execute the migration's upgrade procedure.
      */
     abstract public function upgrade(): void;
+
+    /**
+     * Create the `Schema` object.
+     */
+    public function createSchema(): Schema
+    {
+        return new Schema($this->connection);
+    }
 }

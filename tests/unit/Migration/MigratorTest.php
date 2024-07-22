@@ -95,6 +95,8 @@ final class MigratorTest extends TestCase
     /**
      * @todo ::audit
      * @covers ::__construct
+     * @covers ::createMigrationFile
+     * @covers ::createSchema
      * @covers ::createTable
      * @covers ::downgrade
      * @covers ::getLast
@@ -104,11 +106,13 @@ final class MigratorTest extends TestCase
      * @covers ::upgrade
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Migration\AbstractMigration::__construct
+     * @uses Laucov\Modeling\Migration\AbstractMigration::createSchema
      * @uses Laucov\Modeling\Migration\MigrationFile::__construct
      * @uses Laucov\Modeling\Migration\MigrationFile::findClassName
      * @uses Laucov\Modeling\Migration\MigrationRepository::__construct
      * @uses Laucov\Modeling\Migration\MigrationRepository::addDirectory
      * @uses Laucov\Modeling\Migration\MigrationRepository::addFile
+     * @uses Laucov\Modeling\Migration\MigrationRepository::createMigrationFile
      * @uses Laucov\Modeling\Migration\MigrationRepository::listFiles
      */
     public function testCanMigrate(): void
