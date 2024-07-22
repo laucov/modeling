@@ -31,7 +31,7 @@ namespace Laucov\Modeling\Validation;
 use Laucov\Modeling\Entity\AbstractEntity;
 use Laucov\Modeling\Entity\ErrorMessage;
 use Laucov\Modeling\Entity\Required;
-use Laucov\Validation\Error;
+use Laucov\Modeling\Validation\Traits\ErrorGetterTrait;
 use Laucov\Validation\Interfaces\RuleInterface;
 use Laucov\Validation\Ruleset;
 
@@ -40,17 +40,12 @@ use Laucov\Validation\Ruleset;
  */
 class EntityValidator
 {
+    use ErrorGetterTrait;
+    
     /**
      * Active entity.
      */
     protected AbstractEntity $entity;
-
-    /**
-     * Errors found.
-     * 
-     * @var array<string, RuleInterface[]>
-     */
-    protected array $errors = [];
 
     /**
      * Reflection properties.
@@ -72,36 +67,6 @@ class EntityValidator
      * @var array<string, Ruleset>
      */
     protected array $rules;
-
-    /**
-     * Get all invalid properties names.
-     * 
-     * @return array<string>
-     */
-    public function getErrorKeys(): array
-    {
-        return array_keys($this->errors);
-    }
-
-    /**
-     * Get current errors.
-     * 
-     * @return array<Error>
-     */
-    public function getErrors(string $property_name): array
-    {
-        return $this->errors[$property_name] ?? [];
-    }
-
-    /**
-     * Check if the entity has errors.
-     */
-    public function hasErrors(null|string $name = null): bool
-    {
-        return $name !== null
-            ? (isset($this->errors[$name]) && count($this->errors[$name]))
-            : count($this->errors);
-    }
 
     /**
      * Set the current entity.
