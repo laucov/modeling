@@ -30,7 +30,6 @@ namespace Laucov\Modeling\Entity;
 
 use Laucov\Validation\Error;
 use Laucov\Validation\Interfaces\RuleInterface;
-use Laucov\Validation\Ruleset;
 
 /**
  * Represents a database record.

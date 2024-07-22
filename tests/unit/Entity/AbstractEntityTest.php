@@ -171,7 +171,7 @@ class AbstractEntityTest extends TestCase
         $entity
             ->setErrors('foo', ...$foo_errors)
             ->setErrors('bar', ...$bar_errors);
-        
+
         // Get new errors.
         $this->assertTrue($entity->hasErrors());
         $this->assertTrue($entity->hasErrors('foo'));
