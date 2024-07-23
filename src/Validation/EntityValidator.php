@@ -110,7 +110,6 @@ class EntityValidator
             $attributes = $prop->getAttributes();
             // Create ruleset.
             $ruleset = $this->createRuleset();
-            $ruleset->setData($this->entity);
             $this->rules[$name] = $ruleset;
             // Process attributes.
             $is_required = false;
@@ -157,7 +156,9 @@ class EntityValidator
      */
     public function createRuleset(): Ruleset
     {
-        return new Ruleset();
+        $ruleset = new Ruleset();
+        $ruleset->setData($this->entity);
+        return $ruleset;
     }
 
     /**

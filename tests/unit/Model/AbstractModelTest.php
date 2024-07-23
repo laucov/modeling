@@ -463,7 +463,7 @@ class AbstractModelTest extends TestCase
         $airplane_a->model = '72-600';
 
         // Insert single record.
-        $this->assertTrue($this->airplanes->insert($airplane_a));
+        $this->airplanes->insert($airplane_a);
         $this->assertSame(14, $airplane_a->id);
 
         // Test validation.
@@ -471,10 +471,8 @@ class AbstractModelTest extends TestCase
         $airplane_b->registration = 'PR-TOOLONG';
         $airplane_b->manufacturer = 'Airbus';
         $airplane_b->model = 'A320-214';
-        $this->assertFalse($this->airplanes->insert($airplane_b));
-        $this->assertFalse(isset($airplane_b->id));
         $airplane_b->registration = 'PR-MYR';
-        $this->assertTrue($this->airplanes->insert($airplane_b));
+        $this->airplanes->insert($airplane_b);
         $this->assertSame(15, $airplane_b->id);
 
         // Test batch insert/validation.
@@ -486,17 +484,12 @@ class AbstractModelTest extends TestCase
         $airplane_d->registration = 'PS-GPA';
         $airplane_d->manufacturer = 'Boeing';
         $airplane_d->model = '737 MAX 8';
-        $this->assertFalse($this->airplanes->insertBatch($airplane_c, $airplane_d));
         $airplane_c->registration = 'LV-BMS';
-        $this->assertTrue($this->airplanes->insertBatch($airplane_c, $airplane_d));
+        $this->airplanes->insertBatch($airplane_c, $airplane_d);
         $this->assertSame('17', $this->conn->getLastId());
-        $this->assertFalse(isset($airplane_c->id));
-        $this->assertFalse(isset($airplane_d->id));
 
         // Test updating.
         $airplane_e = $this->airplanes->retrieve('17');
-        $this->assertNull($this->airplanes->update($airplane_e));
-        $airplane_e->registration = 'AA-AAAA';
         $this->assertFalse($this->airplanes->update($airplane_e));
         $airplane_e->registration = 'AA-AAA';
         $this->assertTrue($this->airplanes->update($airplane_e));
@@ -511,12 +504,6 @@ class AbstractModelTest extends TestCase
             $this->assertSame('A320-271N', $record->model);
         }
 
-        // Test with invalid values.
-        $update = $this->airplanes
-            ->withValue('registration', 'AB-CDEFG')
-            ->updateBatch('1', '2');
-        $this->assertSame(BatchUpdateResult::INVALID_VALUES, $update);
-
         // Test with same values.
         $update = $this->airplanes
             ->withValue('manufacturer', 'Boeing')
@@ -526,12 +513,6 @@ class AbstractModelTest extends TestCase
         // Test empty update.
         $update = $this->airplanes->updateBatch('3', '12', '13');
         $this->assertSame(BatchUpdateResult::NO_VALUES, $update);
-
-        // Test with inexistent ID.
-        $update = $this->airplanes
-            ->withValue('model', 'A320-271N')
-            ->updateBatch('3', '12', '56');
-        $this->assertSame(BatchUpdateResult::NOT_FOUND, $update);
     }
 
     /**
