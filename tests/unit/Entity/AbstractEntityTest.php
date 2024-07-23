@@ -233,6 +233,7 @@ class AbstractEntityTest extends TestCase
 
         // Set invalid properties.
         $entity->publisher = 'John Doe Printing Inc.';
-        $this->assertFalse(isset($entity->publisher));
+        $this->assertFalse(property_exists($entity, 'publisher'));
+        $this->assertNull($entity->{'publisher'} ?? null);
     }
 }
