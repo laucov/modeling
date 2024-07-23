@@ -28,9 +28,12 @@
 
 namespace Laucov\Modeling\Validation;
 
+use Laucov\Db\Data\ConnectionFactory;
 use Laucov\Modeling\Entity\AbstractEntity;
 use Laucov\Modeling\Entity\ErrorMessage;
 use Laucov\Modeling\Entity\Required;
+use Laucov\Modeling\Model\AbstractModel;
+use Laucov\Modeling\Validation\Rules\Exists;
 use Laucov\Validation\Interfaces\RuleInterface;
 use Laucov\Validation\Ruleset;
 
@@ -39,6 +42,11 @@ use Laucov\Validation\Ruleset;
  */
 class EntityValidator
 {
+    /**
+     * Connection factory.
+     */
+    protected ConnectionFactory $connections;
+
     /**
      * Active entity.
      */
@@ -64,6 +72,15 @@ class EntityValidator
      * @var array<string, Ruleset>
      */
     protected array $rules;
+
+    /**
+     * Set connection factory.
+     */
+    public function setConnectionFactory(ConnectionFactory $factory): static
+    {
+        $this->connections = $factory;
+        return $this;
+    }
 
     /**
      * Set the current entity.
@@ -118,7 +135,8 @@ class EntityValidator
             /** @var null|string|RuleInterface */
             $rule = null;
             foreach ($attributes as $attr) {
-                if (is_a($attr->getName(), Required::class, true)) {
+                $attr_name = $attr->getName();
+                if (is_a($attr_name, Required::class, true)) {
                     // Remember obligatoriness.
                     /** @var Required */
                     $attr = $attr->newInstance();
@@ -127,13 +145,18 @@ class EntityValidator
                     if (count($attr->with)) {
                         $required_with = $attr->with;
                     }
-                } elseif (is_a($attr->getName(), RuleInterface::class, true)) {
+                } elseif (is_a($attr_name, Exists::class, true)) {
+                    // Add rule.
+                    /** @var Exists */
+                    $rule = $attr->newInstance();
+                    $this->configureExistenceRule($rule);
+                    $ruleset->addRule($rule);
+                } elseif (is_a($attr_name, RuleInterface::class, true)) {
                     // Add rule.
                     /** @var RuleInterface */
-                    $attr = $attr->newInstance();
-                    $ruleset->addRule($attr);
-                    $rule = $attr;
-                } elseif (is_a($attr->getName(), ErrorMessage::class, true)) {
+                    $rule = $attr->newInstance();
+                    $ruleset->addRule($rule);
+                } elseif (is_a($attr_name, ErrorMessage::class, true)) {
                     // Add message.
                     /** @var ErrorMessage */
                     $attr = $attr->newInstance();
@@ -152,9 +175,37 @@ class EntityValidator
     }
 
     /**
+     * Configure available options to a `Exists` rule object.
+     */
+    protected function configureExistenceRule(Exists $rule): void
+    {
+        $model = $this->createModel($rule->model);
+        if ($rule->callback !== null) {
+            $model->{$rule->callback}();
+        }
+        $values = $model
+            ->withColumns($rule->column)
+            ->listAll()
+            ->getColumn($rule->column);
+        $rule->setOptions($values);
+    }
+
+    /**
+     * Create a `Model` object.
+     * 
+     * @template T of AbstractModel
+     * @param class-string<T>
+     * @return T
+     */
+    protected function createModel(string $class_name): mixed
+    {
+        return new $class_name($this->connections);
+    }
+
+    /**
      * Create a `Ruleset` object.
      */
-    public function createRuleset(): Ruleset
+    protected function createRuleset(): Ruleset
     {
         $ruleset = new Ruleset();
         $ruleset->setData($this->entity);

@@ -30,17 +30,23 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Entity;
 
+use Laucov\Db\Data\ConnectionFactory;
 use Laucov\Modeling\Entity\AbstractEntity;
 use Laucov\Modeling\Entity\ErrorMessage;
 use Laucov\Modeling\Entity\Required;
+use Laucov\Modeling\Model\AbstractModel;
+use Laucov\Modeling\Model\Collection;
 use Laucov\Modeling\Validation\EntityValidator;
+use Laucov\Modeling\Validation\Rules\Exists;
 use Laucov\Validation\Rules\Length;
 use Laucov\Validation\Rules\Regex;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @coversDefaultClass \Laucov\Modeling\Validation\EntityValidator
  * @covers \Laucov\Modeling\Entity\ErrorMessage
+ * @covers \Laucov\Modeling\Validation\Rules\Exists
  */
 class EntityValidatorTest extends TestCase
 {
@@ -254,6 +260,118 @@ class EntityValidatorTest extends TestCase
         // Test context data.
         $entity->has_email = true;
         $this->assertValidation($entity, ['email' => ['required_with']]);
+    }
+
+    /**
+     * @covers ::cacheRules
+     * @covers ::configureExistenceRule
+     * @covers ::createModel
+     * @covers ::setConnectionFactory
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Entity\AbstractEntity::hasErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::resetErrors
+     * @uses Laucov\Modeling\Entity\AbstractEntity::setErrors
+     * @uses Laucov\Modeling\Validation\EntityValidator::cacheRules
+     * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
+     * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
+     * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
+     * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
+     * @uses Laucov\Modeling\Validation\EntityValidator::setConnectionFactory
+     * @uses Laucov\Modeling\Validation\EntityValidator::setEntity
+     * @uses Laucov\Modeling\Validation\EntityValidator::validate
+     * @uses Laucov\Modeling\Validation\Rules\Exists::__construct
+     * @uses Laucov\Modeling\Validation\Rules\Exists::getInfo
+     * @uses Laucov\Modeling\Validation\Rules\Exists::setOptions
+     * @uses Laucov\Modeling\Validation\Rules\Exists::validate
+     */
+    public function testValidatesModelRules(): void
+    {
+        // Create entity instance.
+        $entity = new class () extends AbstractEntity {
+            #[Exists('FoobarModel', 'id', 'doSomething')]
+            public int $foobar_id;
+        };
+
+        // Mock collection.
+        $collection = $this->createStub(Collection::class);
+        $collection
+            ->method('getColumn')
+            ->willReturnMap([['id', [1, 2, 3]]]);
+
+        // Mock model.
+        $mocked_methods = [
+            'createTable',
+            'cacheEntityKeys',
+            'listAll',
+            'withColumns',
+        ];
+        $model = $this->getMockBuilder(AbstractModel::class)
+            ->disableOriginalConstructor()
+            ->disableOriginalClone()
+            ->disableArgumentCloning()
+            ->disallowMockingUnknownTypes()
+            ->setMockClassName('FoobarModel')
+            ->addMethods(['doSomething'])
+            ->onlyMethods($mocked_methods)
+            ->getMock();
+        $model
+            ->expects($this->exactly(1))
+            ->method('doSomething')
+            ->willReturn(null);
+        $model
+            ->expects($this->exactly(1))
+            ->method('withColumns')
+            ->with('id')
+            ->willReturnSelf();
+        $model
+            ->expects($this->exactly(1))
+            ->method('listAll')
+            ->willReturn($collection);
+        
+        // Mock validator model creation.
+        /** @var EntityValidator&MockObject */
+        $validator = $this->getMockBuilder(EntityValidator::class)
+            ->onlyMethods(['createModel'])
+            ->getMock();
+        $validator
+            ->expects($this->exactly(1))
+            ->method('createModel')
+            ->with('FoobarModel')
+            ->willReturn($model);
+        
+        // Mock connection factory.
+        $conn_factory = $this->createMock(ConnectionFactory::class);
+
+        // Validate.
+        $entity->foobar_id = 3;
+        $result = $validator
+            ->setConnectionFactory($conn_factory)
+            ->setEntity($entity)
+            ->validate();
+        $this->assertTrue($result);
+        $entity->foobar_id = 5;
+        $result = $validator->validate();
+        $this->assertFalse($result);
+
+        // Test model factory function.
+        $model = new class ($conn_factory) extends AbstractModel {
+            public ConnectionFactory $connectionFactory;
+            public function __construct($connections)
+            {
+                $this->connectionFactory = $connections;
+            }
+        };
+        $validator = new class ($conn_factory, $model::class) extends EntityValidator {
+            public AbstractModel $model;
+            public function __construct(
+                protected ConnectionFactory $connections,
+                protected string $class_name,
+            ) {
+                $this->model = $this->createModel($class_name);
+            }
+        };
+        $this->assertInstanceOf($model::class, $validator->model);
+        $this->assertSame($conn_factory, $model->connectionFactory);
     }
 
     /**
