@@ -52,6 +52,7 @@ class CollectionTest extends TestCase
      * @covers ::count
      * @covers ::current
      * @covers ::get
+     * @covers ::getColumn
      * @covers ::has
      * @covers ::key
      * @covers ::next
@@ -59,7 +60,7 @@ class CollectionTest extends TestCase
      * @covers ::valid
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      */
-    public function testCanIterate(): void
+    public function testCanIterateAndGetValues(): void
     {
         // Create collection.
         $collection = new Collection(
@@ -91,6 +92,17 @@ class CollectionTest extends TestCase
             $expected_index++;
         }
         $this->assertFalse($collection->has($i + 1));
+
+        // Test getting columns.
+        $this->entities[0]->name = 'John';
+        $this->entities[0]->age = 42;
+        $this->entities[1]->name = 'Mary';
+        $this->entities[1]->age = 51;
+        $this->entities[2]->name = 'Robert';
+        $column = $collection->getColumn('name');
+        $this->assertSame(['John', 'Mary', 'Robert'], $column);
+        $column = $collection->getColumn('age');
+        $this->assertSame([42, 51, null], $column);
     }
 
     /**

@@ -111,6 +111,14 @@ class Collection implements \Countable, \Iterator
     }
 
     /**
+     * Get all values from a specified property.
+     */
+    public function getColumn(string $name): array
+    {
+        return array_map(fn ($e) => $e->$name ?? null, $this->entities);
+    }
+
+    /**
      * Returns whether the specified offset exists.
      * 
      * @return T
