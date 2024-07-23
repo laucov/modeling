@@ -327,7 +327,7 @@ class EntityValidatorTest extends TestCase
             ->expects($this->exactly(1))
             ->method('listAll')
             ->willReturn($collection);
-        
+
         // Mock validator model creation.
         /** @var EntityValidator&MockObject */
         $validator = $this->getMockBuilder(EntityValidator::class)
@@ -338,7 +338,7 @@ class EntityValidatorTest extends TestCase
             ->method('createModel')
             ->with('FoobarModel')
             ->willReturn($model);
-        
+
         // Mock connection factory.
         $conn_factory = $this->createMock(ConnectionFactory::class);
 

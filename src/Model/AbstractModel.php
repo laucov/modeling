@@ -34,7 +34,6 @@ use Laucov\Db\Query\Table;
 use Laucov\Modeling\Entity\AbstractEntity;
 use Laucov\Modeling\Entity\ObjectReader;
 use Laucov\Modeling\Entity\Relationship;
-use Laucov\Modeling\Validation\EntityValidator;
 
 /**
  * Provides table data in form of entities and collections.
