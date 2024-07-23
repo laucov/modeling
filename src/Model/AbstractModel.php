@@ -150,11 +150,6 @@ abstract class AbstractModel
     protected array $updateValues = [];
 
     /**
-     * Entity validator.
-     */
-    protected EntityValidator $validator;
-
-    /**
      * Create the model instance.
      */
     public function __construct(
@@ -164,29 +159,9 @@ abstract class AbstractModel
         protected ConnectionFactory $connections,
     ) {
         // Store a table instance.
-        $this->connection = $this->connections->getConnection($this->connectionName);
-        $this->table = $this->connections->getTable($this->tableName, $this->connectionName);
-        $this->validator = $this->createValidator();
-
-        // Store entity's key names.
+        $this->table = $this->createTable();
         $this->entityKeys = [];
-        foreach (array_keys(get_class_vars($this->entityName)) as $key) {
-            // Check if is a relationship key.
-            $property = new \ReflectionProperty($this->entityName, $key);
-            $rel_attributes = $property->getAttributes(Relationship::class);
-            $rel = count($rel_attributes) > 0
-                ? $rel_attributes[0]->newInstance()
-                : null;
-            if ($rel === null) {
-                // Store default key.
-                $this->entityKeys[] = $key === $this->primaryKey
-                    ? $this->prefix($key)
-                    : $key;
-            } else {
-                // Store relationship key.
-                $this->entityRelationshipKeys[$rel->tableName][] = $key;
-            }
-        }
+        $this->cacheEntityKeys();
     }
 
     /**
@@ -478,6 +453,27 @@ abstract class AbstractModel
     }
 
     /**
+     * Extract the entity class keys.
+     */
+    protected function cacheEntityKeys(): void
+    {
+        $keys = array_keys(get_class_vars($this->entityName));
+        foreach ($keys as $key) {
+            $property = new \ReflectionProperty($this->entityName, $key);
+            $attributes = $property->getAttributes(Relationship::class);
+            if (count($attributes) > 0) {
+                $relationship = reset($attributes)->newInstance();
+                $table = $relationship->tableName;
+                $this->entityRelationshipKeys[$table][] = $key;
+            } elseif ($key === $this->primaryKey) {
+                $this->entityKeys[] = $this->prefix($key);
+            } else {
+                $this->entityKeys[] = $key;
+            }
+        }
+    }
+
+    /**
      * Create a `Collection` object.
      * 
      * @template T of AbstractEntity
@@ -513,11 +509,14 @@ abstract class AbstractModel
     }
 
     /**
-     * Create the `EntityValidator` object.
+     * Create a `Table` instance.
      */
-    protected function createValidator(): EntityValidator
+    protected function createTable(): Table
     {
-        return new EntityValidator();
+        return $this->connections->getTable(
+            $this->tableName,
+            $this->connectionName,
+        );
     }
 
     /**
