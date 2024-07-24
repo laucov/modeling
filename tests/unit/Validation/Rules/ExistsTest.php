@@ -40,7 +40,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * @coversDefaultClass \Laucov\Modeling\Validation\Rules\Exists
  */
-class EntityValidatorTest extends TestCase
+class ExistsTest extends TestCase
 {
     /**
      * @covers ::__construct
@@ -51,10 +51,13 @@ class EntityValidatorTest extends TestCase
     public function testCanValidate(): void
     {
         // Mock collection.
+        $map = [
+            ['column_a', [1, 2, 3]],
+        ];
         $collection = $this->createMock(Collection::class);
         $collection
             ->method('getColumn')
-            ->willReturn([1, 2, 3]);
+            ->willReturnMap($map);
 
         // Mock model.
         $methods = [
@@ -73,6 +76,9 @@ class EntityValidatorTest extends TestCase
             ->addMethods(['doSomething'])
             ->onlyMethods($methods)
             ->getMock();
+        $model
+            ->expects($this->exactly(2))
+            ->method('doSomething');
         $model
             ->method('listAll')
             ->willReturn($collection);
