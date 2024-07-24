@@ -28,25 +28,21 @@
 
 declare(strict_types=1);
 
-namespace Tests\Unit\Entity;
+namespace Tests\Unit\Validation;
 
 use Laucov\Db\Data\ConnectionFactory;
 use Laucov\Modeling\Entity\AbstractEntity;
 use Laucov\Modeling\Entity\ErrorMessage;
 use Laucov\Modeling\Entity\Required;
-use Laucov\Modeling\Model\AbstractModel;
-use Laucov\Modeling\Model\Collection;
 use Laucov\Modeling\Validation\EntityValidator;
-use Laucov\Modeling\Validation\Rules\Exists;
+use Laucov\Modeling\Validation\Rules\AbstractDatabaseRule;
 use Laucov\Validation\Rules\Length;
 use Laucov\Validation\Rules\Regex;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 /**
  * @coversDefaultClass \Laucov\Modeling\Validation\EntityValidator
  * @covers \Laucov\Modeling\Entity\ErrorMessage
- * @covers \Laucov\Modeling\Validation\Rules\Exists
  */
 class EntityValidatorTest extends TestCase
 {
@@ -56,7 +52,7 @@ class EntityValidatorTest extends TestCase
     protected EntityValidator $validator;
 
     /**
-     * @covers ::cacheRules
+     * @covers ::extractRules
      * @covers ::getRuleset
      * @covers ::setEntity
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
@@ -77,10 +73,10 @@ class EntityValidatorTest extends TestCase
         // its rules instead of repeatedly fetching them as attributes.
         $validator = new class () extends EntityValidator {
             public static int $cacheCount = 0;
-            protected function cacheRules(): void
+            protected function extractRules(): array
             {
                 static::$cacheCount++;
-                parent::cacheRules();
+                return parent::extractRules();
             }
         };
 
@@ -132,7 +128,7 @@ class EntityValidatorTest extends TestCase
     }
 
     /**
-     * @covers ::cacheRules
+     * @covers ::extractRules
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::getErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::hasErrors
@@ -202,7 +198,7 @@ class EntityValidatorTest extends TestCase
      * @uses Laucov\Modeling\Entity\AbstractEntity::resetErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::setErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::toArray
-     * @uses Laucov\Modeling\Validation\EntityValidator::cacheRules
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractRules
      * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
      * @uses Laucov\Modeling\Validation\EntityValidator::setEntity
      * @uses Laucov\Modeling\Entity\ObjectReader::toArray
@@ -263,15 +259,13 @@ class EntityValidatorTest extends TestCase
     }
 
     /**
-     * @covers ::cacheRules
-     * @covers ::configureExistenceRule
-     * @covers ::createModel
+     * @covers ::extractRules
      * @covers ::setConnectionFactory
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::hasErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::resetErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::setErrors
-     * @uses Laucov\Modeling\Validation\EntityValidator::cacheRules
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractRules
      * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
@@ -279,105 +273,35 @@ class EntityValidatorTest extends TestCase
      * @uses Laucov\Modeling\Validation\EntityValidator::setConnectionFactory
      * @uses Laucov\Modeling\Validation\EntityValidator::setEntity
      * @uses Laucov\Modeling\Validation\EntityValidator::validate
-     * @uses Laucov\Modeling\Validation\Rules\Exists::__construct
-     * @uses Laucov\Modeling\Validation\Rules\Exists::getInfo
-     * @uses Laucov\Modeling\Validation\Rules\Exists::setOptions
-     * @uses Laucov\Modeling\Validation\Rules\Exists::validate
+     * @uses Laucov\Modeling\Validation\Rules\AbstractDatabaseRule::setConnectionFactory
      */
     public function testValidatesModelRules(): void
     {
         // Create entity instance.
         $entity = new class () extends AbstractEntity {
-            #[Exists('FoobarModel', 'id', 'doSomething')]
-            public int $foobar_id;
+            #[EntityValidatorTestRule]
+            public int $foobar_id = 42;
         };
-
-        // Mock collection.
-        $collection = $this->createStub(Collection::class);
-        $collection
-            ->method('getColumn')
-            ->willReturnMap([['id', [1, 2, 3]]]);
-
-        // Mock model.
-        $mocked_methods = [
-            'createTable',
-            'cacheEntityKeys',
-            'listAll',
-            'withColumns',
-        ];
-        $model = $this->getMockBuilder(AbstractModel::class)
-            ->disableOriginalConstructor()
-            ->disableOriginalClone()
-            ->disableArgumentCloning()
-            ->disallowMockingUnknownTypes()
-            ->setMockClassName('FoobarModel')
-            ->addMethods(['doSomething'])
-            ->onlyMethods($mocked_methods)
-            ->getMock();
-        $model
-            ->expects($this->exactly(1))
-            ->method('doSomething')
-            ->willReturn(null);
-        $model
-            ->expects($this->exactly(1))
-            ->method('withColumns')
-            ->with('id')
-            ->willReturnSelf();
-        $model
-            ->expects($this->exactly(1))
-            ->method('listAll')
-            ->willReturn($collection);
-
-        // Mock validator model creation.
-        /** @var EntityValidator&MockObject */
-        $validator = $this->getMockBuilder(EntityValidator::class)
-            ->onlyMethods(['createModel'])
-            ->getMock();
-        $validator
-            ->expects($this->exactly(1))
-            ->method('createModel')
-            ->with('FoobarModel')
-            ->willReturn($model);
 
         // Mock connection factory.
         $conn_factory = $this->createMock(ConnectionFactory::class);
 
         // Validate.
-        $entity->foobar_id = 3;
-        $result = $validator
+        EntityValidatorTestRule::$isValid = true;
+        $result = $this->validator
             ->setConnectionFactory($conn_factory)
             ->setEntity($entity)
             ->validate();
         $this->assertTrue($result);
-        $entity->foobar_id = 5;
-        $result = $validator->validate();
-        $this->assertFalse($result);
-
-        // Test model factory function.
-        $model = new class ($conn_factory) extends AbstractModel {
-            public ConnectionFactory $connectionFactory;
-            public function __construct($connections)
-            {
-                $this->connectionFactory = $connections;
-            }
-        };
-        $validator = new class ($conn_factory, $model::class) extends EntityValidator {
-            public AbstractModel $model;
-            public function __construct(
-                protected ConnectionFactory $connections,
-                protected string $class_name,
-            ) {
-                $this->model = $this->createModel($class_name);
-            }
-        };
-        $this->assertInstanceOf($model::class, $validator->model);
-        $this->assertSame($conn_factory, $model->connectionFactory);
+        EntityValidatorTestRule::$isValid = false;
+        $this->assertFalse($this->validator->validate());
+        $this->assertSame([$conn_factory], EntityValidatorTestRule::$factories);
     }
 
     /**
      * @covers ::validate
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
-     * @uses Laucov\Modeling\Validation\EntityValidator::cacheRules
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractRules
      * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
      * @uses Laucov\Modeling\Entity\AbstractEntity::getErrorKeys
      * @uses Laucov\Modeling\Entity\AbstractEntity::getErrors
@@ -485,5 +409,53 @@ class EntityValidatorTest extends TestCase
     protected function setUp(): void
     {
         $this->validator = new EntityValidator();
+    }
+}
+
+/**
+ * Provides test functionalities to the entity validator.
+ */
+#[\Attribute(\Attribute::TARGET_PROPERTY)]
+class EntityValidatorTestRule extends AbstractDatabaseRule
+{
+    /**
+     * Passed connection factories.
+     */
+    public static array $factories;
+
+    /**
+     * Value to return on validation calls.
+     */
+    public static bool $isValid;
+
+    /**
+     * Get the rule's info.
+     * 
+     * Returns an empty array.
+     */
+    public function getInfo(): array
+    {
+        return [];
+    }
+    
+    /**
+     * Set the connection factory.
+     * 
+     * Register each factory passed to the static factory list.
+     */
+    public function setConnectionFactory(ConnectionFactory $factory): static
+    {
+        static::$factories[] = $factory;
+        return parent::setConnectionFactory($factory);
+    }
+
+    /**
+     * Validate a single value.
+     * 
+     * Use the user-defined static validation value for test purposes.
+     */
+    public function validate(mixed $value): bool
+    {
+        return static::$isValid;
     }
 }

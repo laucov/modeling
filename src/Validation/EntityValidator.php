@@ -33,7 +33,7 @@ use Laucov\Modeling\Entity\AbstractEntity;
 use Laucov\Modeling\Entity\ErrorMessage;
 use Laucov\Modeling\Entity\Required;
 use Laucov\Modeling\Model\AbstractModel;
-use Laucov\Modeling\Validation\Rules\Exists;
+use Laucov\Modeling\Validation\Rules\AbstractDatabaseRule;
 use Laucov\Validation\Interfaces\RuleInterface;
 use Laucov\Validation\Ruleset;
 
@@ -117,9 +117,10 @@ class EntityValidator
     /**
      * Cache the entity's rules.
      */
-    protected function cacheRules(): void
+    protected function extractRules(): array
     {
         // Extract each properties' rules.
+        $rules = [];
         foreach ($this->getProperties() as $prop) {
             // Get name.
             $name = $prop->getName();
@@ -127,7 +128,7 @@ class EntityValidator
             $attributes = $prop->getAttributes();
             // Create ruleset.
             $ruleset = $this->createRuleset();
-            $this->rules[$name] = $ruleset;
+            $rules[$name] = $ruleset;
             // Process attributes.
             $is_required = false;
             $required_with = null;
@@ -145,16 +146,14 @@ class EntityValidator
                     if (count($attr->with)) {
                         $required_with = $attr->with;
                     }
-                } elseif (is_a($attr_name, Exists::class, true)) {
-                    // Add rule.
-                    /** @var Exists */
-                    $rule = $attr->newInstance();
-                    $this->configureExistenceRule($rule);
-                    $ruleset->addRule($rule);
                 } elseif (is_a($attr_name, RuleInterface::class, true)) {
                     // Add rule.
                     /** @var RuleInterface */
                     $rule = $attr->newInstance();
+                    if (is_a($rule, AbstractDatabaseRule::class, true)) {
+                        /** @var AbstractDatabaseRule $rule */
+                        $rule->setConnectionFactory($this->connections);
+                    }
                     $ruleset->addRule($rule);
                 } elseif (is_a($attr_name, ErrorMessage::class, true)) {
                     // Add message.
@@ -172,34 +171,7 @@ class EntityValidator
                 $ruleset->require($required_with, $obligatoriness_message);
             }
         }
-    }
-
-    /**
-     * Configure available options to a `Exists` rule object.
-     */
-    protected function configureExistenceRule(Exists $rule): void
-    {
-        $model = $this->createModel($rule->model);
-        if ($rule->callback !== null) {
-            $model->{$rule->callback}();
-        }
-        $values = $model
-            ->withColumns($rule->column)
-            ->listAll()
-            ->getColumn($rule->column);
-        $rule->setOptions($values);
-    }
-
-    /**
-     * Create a `Model` object.
-     * 
-     * @template T of AbstractModel
-     * @param class-string<T>
-     * @return T
-     */
-    protected function createModel(string $class_name): mixed
-    {
-        return new $class_name($this->connections);
+        return $rules;
     }
 
     /**
@@ -250,7 +222,7 @@ class EntityValidator
     {
         // Cache rules.
         if (!isset($this->rules)) {
-            $this->cacheRules();
+            $this->rules = $this->extractRules();
         }
 
         return $this->rules[$property_name];

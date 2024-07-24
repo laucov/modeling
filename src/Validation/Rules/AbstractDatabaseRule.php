@@ -28,56 +28,39 @@
 
 namespace Laucov\Modeling\Validation\Rules;
 
+use Laucov\Db\Data\ConnectionFactory;
+use Laucov\Modeling\Model\AbstractModel;
+use Laucov\Validation\AbstractRule;
+
 /**
  * Indicates that a property must match one or more values from the database.
  */
 #[\Attribute(\Attribute::TARGET_PROPERTY)]
-class Exists extends AbstractDatabaseRule
+abstract class AbstractDatabaseRule extends AbstractRule
 {
     /**
-     * Create the attribute instance.
+     * Connection factory.
      */
-    public function __construct(
-        /**
-         * Model class name.
-         * 
-         * @var class-string<AbstractModel>
-         */
-        protected string $model,
+    protected ConnectionFactory $connections;
 
-        /**
-         * Column to match.
-         */
-        protected string $column,
-
-        /**
-         * Method to call from the given model before querying values.
-         */
-        protected null|string $callback = null,
-    ) {
+    /**
+     * Set the connection factory.
+     */
+    public function setConnectionFactory(ConnectionFactory $factory): static
+    {
+        $this->connections = $factory;
+        return $this;
     }
 
     /**
-     * Get the rule's info.
+     * Create a model instance.
+     * 
+     * @template T of AbstractModel
+     * @param class-string<T>
+     * @return T
      */
-    public function getInfo(): array
+    protected function createModel(string $class_name): mixed
     {
-        return [];
-    }
-
-    /**
-     * Validate a single value.
-     */
-    public function validate(mixed $value): bool
-    {
-        $model = $this->createModel($this->model);
-        if ($this->callback !== null) {
-            $model->{$this->callback}();
-        }
-        $values = $model
-            ->withColumns($this->column)
-            ->listAll()
-            ->getColumn($this->column);
-        return in_array($value, $values, true);
+        return new $class_name($this->connections);
     }
 }
