@@ -129,6 +129,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
     public function testCanCreateEntity(): void
@@ -170,6 +171,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
     public function testCanDeleteAndErase(): void
@@ -239,6 +241,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createCollection
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
@@ -257,7 +260,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\Collection::rewind
      * @uses Laucov\Modeling\Model\Collection::valid
      */
-    public function testFetchOneToManyRelationships(): void
+    public function testCanFetchOneToManyRelationships(): void
     {
         // Retrieve without flights.
         $airplane = $this->airplanes->retrieve('3');
@@ -350,6 +353,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createCollection
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
      * @uses Laucov\Modeling\Model\AbstractModel::list
@@ -426,33 +430,34 @@ class AbstractModelTest extends TestCase
      * @covers ::withValue
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::__set
-     * @uses Laucov\Modeling\Validation\EntityValidator::extractRules
-     * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
      * @uses Laucov\Modeling\Entity\AbstractEntity::getEntries
-     * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
-     * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
-     * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
      * @uses Laucov\Modeling\Entity\AbstractEntity::hasErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::resetErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::setErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::toArray
-     * @uses Laucov\Modeling\Validation\EntityValidator::setEntity
-     * @uses Laucov\Modeling\Validation\EntityValidator::validate
+     * @uses Laucov\Modeling\Entity\ObjectReader::count
+     * @uses Laucov\Modeling\Entity\ObjectReader::diff
+     * @uses Laucov\Modeling\Entity\ObjectReader::toArray
      * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
-     * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
-     * @uses Laucov\Modeling\Model\AbstractModel::createTable
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createCollection
+     * @uses Laucov\Modeling\Model\AbstractModel::createTable
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      * @uses Laucov\Modeling\Model\AbstractModel::retrieve
      * @uses Laucov\Modeling\Model\AbstractModel::retrieveBatch
-     * @uses Laucov\Modeling\Entity\ObjectReader::count
-     * @uses Laucov\Modeling\Entity\ObjectReader::diff
-     * @uses Laucov\Modeling\Entity\ObjectReader::toArray
+     * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractRules
+     * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
+     * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
+     * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
+     * @uses Laucov\Modeling\Validation\EntityValidator::setEntity
+     * @uses Laucov\Modeling\Validation\EntityValidator::validate
      * @uses Laucov\Validation\Rules\Regex::__construct
      * @uses Laucov\Validation\Rules\Regex::validate
      * @uses Laucov\Validation\Ruleset::addRule
@@ -468,7 +473,7 @@ class AbstractModelTest extends TestCase
         $airplane_a->model = '72-600';
 
         // Insert single record.
-        $this->airplanes->insert($airplane_a);
+        $this->assertTrue($this->airplanes->insert($airplane_a));
         $this->assertSame(14, $airplane_a->id);
 
         // Test validation.
@@ -476,8 +481,10 @@ class AbstractModelTest extends TestCase
         $airplane_b->registration = 'PR-TOOLONG';
         $airplane_b->manufacturer = 'Airbus';
         $airplane_b->model = 'A320-214';
+        $this->assertFalse($this->airplanes->insert($airplane_b));
+        $this->assertFalse(isset($airplane_b->id));
         $airplane_b->registration = 'PR-MYR';
-        $this->airplanes->insert($airplane_b);
+        $this->assertTrue($this->airplanes->insert($airplane_b));
         $this->assertSame(15, $airplane_b->id);
 
         // Test batch insert/validation.
@@ -489,12 +496,17 @@ class AbstractModelTest extends TestCase
         $airplane_d->registration = 'PS-GPA';
         $airplane_d->manufacturer = 'Boeing';
         $airplane_d->model = '737 MAX 8';
+        $this->assertFalse($this->airplanes->insertBatch($airplane_c, $airplane_d));
         $airplane_c->registration = 'LV-BMS';
-        $this->airplanes->insertBatch($airplane_c, $airplane_d);
+        $this->assertTrue($this->airplanes->insertBatch($airplane_c, $airplane_d));
         $this->assertSame('17', $this->conn->getLastId());
+        $this->assertFalse(isset($airplane_c->id));
+        $this->assertFalse(isset($airplane_d->id));
 
         // Test updating.
         $airplane_e = $this->airplanes->retrieve('17');
+        $this->assertNull($this->airplanes->update($airplane_e));
+        $airplane_e->registration = 'AA-AAAA';
         $this->assertFalse($this->airplanes->update($airplane_e));
         $airplane_e->registration = 'AA-AAA';
         $this->assertTrue($this->airplanes->update($airplane_e));
@@ -509,6 +521,12 @@ class AbstractModelTest extends TestCase
             $this->assertSame('A320-271N', $record->model);
         }
 
+        // Test with invalid values.
+        $update = $this->airplanes
+            ->withValue('registration', 'AB-CDEFG')
+            ->updateBatch('1', '2');
+        $this->assertSame(BatchUpdateResult::INVALID_VALUES, $update);
+
         // Test with same values.
         $update = $this->airplanes
             ->withValue('manufacturer', 'Boeing')
@@ -518,14 +536,21 @@ class AbstractModelTest extends TestCase
         // Test empty update.
         $update = $this->airplanes->updateBatch('3', '12', '13');
         $this->assertSame(BatchUpdateResult::NO_VALUES, $update);
+
+        // Test with inexistent ID.
+        $update = $this->airplanes
+            ->withValue('model', 'A320-271N')
+            ->updateBatch('3', '12', '56');
+        $this->assertSame(BatchUpdateResult::NOT_FOUND, $update);
     }
 
     /**
      * @covers ::__construct
-     * @covers ::cacheEntityKeys
-     * @covers ::createTable
      * @covers ::applyDeletionFilter
+     * @covers ::cacheEntityKeys
      * @covers ::createCollection
+     * @covers ::createTable
+     * @covers ::createValidator
      * @covers ::getEntities
      * @covers ::list
      * @covers ::listAll
@@ -631,6 +656,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
@@ -687,6 +713,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createCollection
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::list
@@ -728,6 +755,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createCollection
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
     public function testChecksIfInsertedEntitiesAreEmpty(): void
@@ -757,6 +785,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createCollection
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
     public function testChecksIfInsertedEntityBatchIsEmpty(): void
@@ -802,6 +831,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
@@ -829,6 +859,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
@@ -861,6 +892,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createCollection
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
      * @uses Laucov\Modeling\Model\AbstractModel::list
      * @uses Laucov\Modeling\Model\AbstractModel::listAll

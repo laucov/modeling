@@ -34,6 +34,7 @@ use Laucov\Db\Query\Table;
 use Laucov\Modeling\Entity\AbstractEntity;
 use Laucov\Modeling\Entity\ObjectReader;
 use Laucov\Modeling\Entity\Relationship;
+use Laucov\Modeling\Validation\EntityValidator;
 
 /**
  * Provides table data in form of entities and collections.
@@ -46,11 +47,6 @@ abstract class AbstractModel
      * Whether to reset the deletion filter upon the next query.
      */
     public bool $keepDeletionFilter = false;
-
-    /**
-     * Connection instance.
-     */
-    protected Connection $connection;
 
     /**
      * Connection name.
@@ -149,6 +145,11 @@ abstract class AbstractModel
     protected array $updateValues = [];
 
     /**
+     * Entity validator.
+     */
+    protected EntityValidator $validator;
+
+    /**
      * Create the model instance.
      */
     public function __construct(
@@ -157,9 +158,9 @@ abstract class AbstractModel
          */
         protected ConnectionFactory $connections,
     ) {
-        // Store a table instance.
-        $this->table = $this->createTable();
         $this->entityKeys = [];
+        $this->table = $this->createTable();
+        $this->validator = $this->createValidator();
         $this->cacheEntityKeys();
     }
 
@@ -235,8 +236,14 @@ abstract class AbstractModel
      * 
      * @param T $entity
      */
-    public function insert(mixed $entity): void
+    public function insert(mixed $entity): bool
     {
+        // Validate entity.
+        if (!$this->validator->setEntity($entity)->validate()) {
+            return false;
+        }
+
+        // Insert record.
         $data = $entity->toArray();
         if (count($data) < 1) {
             $message = 'Cannot insert empty records to the database.';
@@ -244,13 +251,25 @@ abstract class AbstractModel
         }
         $id = $this->table->insertRecord($data);
         $entity->{$this->primaryKey} = $id;
+
+        return true;
     }
 
     /**
      * Insert one or more records.
      */
-    public function insertBatch(AbstractEntity ...$entities): void
+    public function insertBatch(AbstractEntity ...$entities): bool
     {
+        // Validate each entity.
+        $results = [];
+        foreach ($entities as $entity) {
+            $results[] = $this->validator->setEntity($entity)->validate();
+        }
+        if (in_array(false, $results, true)) {
+            return false;
+        }
+
+        // Insert all entities.
         $data = [];
         foreach ($entities as $entity) {
             $entry = $entity->toArray();
@@ -261,6 +280,8 @@ abstract class AbstractModel
             $data[] = $entry;
         }
         $this->table->insertRecords(...$data);
+
+        return true;
     }
 
     /**
@@ -353,15 +374,24 @@ abstract class AbstractModel
      * 
      * @param T $entity
      */
-    public function update(mixed $entity): bool
+    public function update(mixed $entity): null|bool
     {
-        $entries = $entity->getEntries();
-        if (ObjectReader::count($entries) < 1) {
+        // Validate entity.
+        if (!$this->validator->setEntity($entity)->validate()) {
             return false;
         }
+
+        // Check if has entries.
+        $entries = $entity->getEntries();
+        if (ObjectReader::count($entries) < 1) {
+            return null;
+        }
+
+        // Insert record.
         $this->table
             ->filter($this->primaryKey, '=', $entity->{$this->primaryKey})
             ->updateRecords((array) $entries);
+
         return true;
     }
 
@@ -370,33 +400,54 @@ abstract class AbstractModel
      */
     public function updateBatch(string ...$ids): BatchUpdateResult
     {
+        // Check if values were set.
         if (count($this->updateValues) < 1) {
             $this->updateValues = [];
             return BatchUpdateResult::NO_VALUES;
         }
+
+        // Get records.
         $entities = $this->table
             ->filter($this->primaryKey, '=', $ids)
             ->selectRecords($this->entityName);
+        if (count($entities) !== count($ids)) {
+            $this->updateValues = [];
+            return BatchUpdateResult::NOT_FOUND;
+        }
+
+        // Iterate records.
         $ids = [];
-        // Check entries.
-        // Ignore records that wouldn't change.
         foreach ($entities as $entity) {
+            // Set values.
             foreach ($this->updateValues as $name => $value) {
                 $entity->$name = $value;
             }
+            // Validate.
+            if (!$this->validator->setEntity($entity)->validate()) {
+                $this->updateValues = [];
+                return BatchUpdateResult::INVALID_VALUES;
+            }
+            // Count entries.
+            // Ignore records that wouldn't change.
             if (ObjectReader::count($entity->getEntries()) > 0) {
                 $ids[] = (string) $entity->{$this->primaryKey};
             }
         }
+
         // Cancel if there is nothing to update.
         if (count($ids) < 1) {
             $this->updateValues = [];
             return BatchUpdateResult::NO_ENTRIES;
         }
+
+        // Update records.
         $this->table
             ->filter($this->primaryKey, '=', $ids)
             ->updateRecords($this->updateValues);
+
+        // Reset values.
         $this->updateValues = [];
+
         return BatchUpdateResult::SUCCESS;
     }
 
@@ -496,7 +547,7 @@ abstract class AbstractModel
     }
 
     /**
-     * Create an `AbstractModel` instance.
+     * Create a model instance with the specified class name.
      * 
      * @template T of AbstractModel
      * @param class-string<T> $class_name
@@ -508,7 +559,7 @@ abstract class AbstractModel
     }
 
     /**
-     * Create a `Table` instance.
+     * Create a table instance.
      */
     protected function createTable(): Table
     {
@@ -516,6 +567,14 @@ abstract class AbstractModel
             $this->tableName,
             $this->connectionName,
         );
+    }
+
+    /**
+     * Create a validator instance.
+     */
+    protected function createValidator(): EntityValidator
+    {
+        return new EntityValidator();
     }
 
     /**

@@ -62,7 +62,9 @@ class AbstractDatabaseRuleTest extends TestCase
             ->disableOriginalClone()
             ->disableArgumentCloning()
             ->disallowMockingUnknownTypes()
-            ->onlyMethods(['cacheEntityKeys', 'createTable'])
+            ->onlyMethods(
+                ['cacheEntityKeys', 'createTable', 'createValidator'],
+            )
             ->getMock();
         
         // Mock connection factory.
