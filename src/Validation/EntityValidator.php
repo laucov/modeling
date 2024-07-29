@@ -180,7 +180,6 @@ class EntityValidator
     protected function createRuleset(): Ruleset
     {
         $ruleset = new Ruleset();
-        $ruleset->setData($this->entity);
         return $ruleset;
     }
 
@@ -224,7 +223,8 @@ class EntityValidator
         if (!isset($this->rules)) {
             $this->rules = $this->extractRules();
         }
-
-        return $this->rules[$property_name];
+        $ruleset = $this->rules[$property_name];
+        $ruleset->setData($this->entity);
+        return $ruleset;
     }
 }

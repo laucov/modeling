@@ -256,6 +256,11 @@ class EntityValidatorTest extends TestCase
         // Test context data.
         $entity->has_email = true;
         $this->assertValidation($entity, ['email' => ['required_with']]);
+
+        // Test another entity.
+        $other_entity = clone $entity;
+        unset($other_entity->has_email);
+        $this->assertValidation($other_entity, []);
     }
 
     /**
