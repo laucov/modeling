@@ -452,6 +452,8 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::retrieve
      * @uses Laucov\Modeling\Model\AbstractModel::retrieveBatch
      * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractProperties
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::extractRules
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
@@ -740,8 +742,10 @@ class AbstractModelTest extends TestCase
     /**
      * @covers ::insert
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
-     * @uses Laucov\Modeling\Validation\EntityValidator::extractRules
      * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractProperties
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractPropertyNames
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractRules
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
@@ -770,6 +774,8 @@ class AbstractModelTest extends TestCase
     /**
      * @covers ::insertBatch
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractProperties
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::extractRules
      * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties

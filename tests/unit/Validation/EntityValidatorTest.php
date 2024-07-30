@@ -52,7 +52,8 @@ class EntityValidatorTest extends TestCase
     protected EntityValidator $validator;
 
     /**
-     * @covers ::extractRules
+     * @covers ::getProperties
+     * @covers ::getPropertyNames
      * @covers ::getRuleset
      * @covers ::setEntity
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
@@ -60,22 +61,34 @@ class EntityValidatorTest extends TestCase
      * @uses Laucov\Modeling\Entity\AbstractEntity::resetErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::setErrors
      * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
-     * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
-     * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
-     * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractProperties
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractPropertyNames
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractRules
      * @uses Laucov\Modeling\Validation\EntityValidator::validate
      * @uses Laucov\Modeling\Entity\Required::__construct
      */
-    public function testCachesRules(): void
+    public function testCachesPropertiesAndRules(): void
     {
         // Create validator.
         // Override the `cacheRules()` method to test whether the entity caches
         // its rules instead of repeatedly fetching them as attributes.
         $validator = new class () extends EntityValidator {
-            public static int $cacheCount = 0;
+            public static int $propCacheCount = 0;
+            public static int $propNameCacheCount = 0;
+            public static int $ruleCacheCount = 0;
+            protected function extractProperties(): array
+            {
+                static::$propCacheCount++;
+                return parent::extractProperties();
+            }
+            protected function extractPropertyNames(): array
+            {
+                static::$propNameCacheCount++;
+                return parent::extractPropertyNames();
+            }
             protected function extractRules(): array
             {
-                static::$cacheCount++;
+                static::$ruleCacheCount++;
                 return parent::extractRules();
             }
         };
@@ -101,14 +114,18 @@ class EntityValidatorTest extends TestCase
         $validator->validate();
         $validator->validate();
         $validator->validate();
-        $this->assertSame(1, $validator::class::$cacheCount);
+        $this->assertSame(1, $validator::class::$ruleCacheCount);
+        $this->assertSame(1, $validator::class::$propCacheCount);
+        $this->assertSame(1, $validator::class::$propNameCacheCount);
 
         // Test caching with entity of same type.
         $validator->setEntity(new $class_name());
         $validator->validate();
         $validator->validate();
         $validator->validate();
-        $this->assertSame(1, $validator::class::$cacheCount);
+        $this->assertSame(1, $validator::class::$ruleCacheCount);
+        $this->assertSame(1, $validator::class::$propCacheCount);
+        $this->assertSame(1, $validator::class::$propNameCacheCount);
 
         // Create other entity.
         $other_entity = new class () extends AbstractEntity {
@@ -124,7 +141,9 @@ class EntityValidatorTest extends TestCase
         $validator->validate();
         $validator->validate();
         $validator->validate();
-        $this->assertSame(2, $validator::class::$cacheCount);
+        $this->assertSame(2, $validator::class::$ruleCacheCount);
+        $this->assertSame(2, $validator::class::$propCacheCount);
+        $this->assertSame(2, $validator::class::$propNameCacheCount);
     }
 
     /**
@@ -135,6 +154,8 @@ class EntityValidatorTest extends TestCase
      * @uses Laucov\Modeling\Entity\AbstractEntity::resetErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::setErrors
      * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractProperties
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
@@ -186,6 +207,9 @@ class EntityValidatorTest extends TestCase
 
     /**
      * @covers ::createRuleset
+     * @covers ::extractProperties
+     * @covers ::extractPropertyNames
+     * @covers ::extractRules
      * @covers ::getProperties
      * @covers ::getPropertyNames
      * @covers ::setEntity
@@ -198,7 +222,6 @@ class EntityValidatorTest extends TestCase
      * @uses Laucov\Modeling\Entity\AbstractEntity::resetErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::setErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::toArray
-     * @uses Laucov\Modeling\Validation\EntityValidator::extractRules
      * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
      * @uses Laucov\Modeling\Validation\EntityValidator::setEntity
      * @uses Laucov\Modeling\Entity\ObjectReader::toArray
@@ -270,8 +293,10 @@ class EntityValidatorTest extends TestCase
      * @uses Laucov\Modeling\Entity\AbstractEntity::hasErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::resetErrors
      * @uses Laucov\Modeling\Entity\AbstractEntity::setErrors
-     * @uses Laucov\Modeling\Validation\EntityValidator::extractRules
      * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractProperties
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractPropertyNames
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractRules
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
@@ -306,6 +331,8 @@ class EntityValidatorTest extends TestCase
     /**
      * @covers ::validate
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractProperties
+     * @uses Laucov\Modeling\Validation\EntityValidator::extractPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::extractRules
      * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
      * @uses Laucov\Modeling\Entity\AbstractEntity::getErrorKeys

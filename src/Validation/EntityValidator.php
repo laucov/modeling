@@ -88,7 +88,7 @@ class EntityValidator
     public function setEntity(AbstractEntity $entity): static
     {
         if (isset($this->entity) && $entity::class !== $this->entity::class) {
-            unset($this->rules);
+            unset($this->properties, $this->propertyNames, $this->rules);
         }
         $this->entity = $entity;
         return $this;
@@ -115,7 +115,26 @@ class EntityValidator
     }
 
     /**
-     * Cache the entity's rules.
+     * Get the entity's public properties from its reflection.
+     */
+    protected function extractProperties(): array
+    {
+        $reflection = new \ReflectionClass($this->entity::class);
+        $filter = \ReflectionProperty::IS_PUBLIC;
+        return $reflection->getProperties($filter);
+    }
+
+    /**
+     * Get the entity's public property names from its reflection.
+     */
+    protected function extractPropertyNames(): array
+    {
+        $properties = $this->getProperties();
+        return array_map(fn ($p) => $p->getName(), $properties);
+    }
+
+    /**
+     * Get the entity's rules from its reflection.
      */
     protected function extractRules(): array
     {
@@ -190,13 +209,9 @@ class EntityValidator
      */
     protected function getProperties(): array
     {
-        // Cache properties.
         if (!isset($this->properties)) {
-            $reflection = new \ReflectionClass($this->entity::class);
-            $filter = \ReflectionProperty::IS_PUBLIC;
-            $this->properties = $reflection->getProperties($filter);
+            $this->properties = $this->extractProperties();
         }
-
         return $this->properties;
     }
 
@@ -205,12 +220,9 @@ class EntityValidator
      */
     protected function getPropertyNames(): array
     {
-        // Cache property names.
         if (!isset($this->propertyNames)) {
-            $props = $this->getProperties();
-            $this->propertyNames = array_map(fn ($p) => $p->getName(), $props);
+            $this->propertyNames = $this->extractPropertyNames();
         }
-
         return $this->propertyNames;
     }
 
