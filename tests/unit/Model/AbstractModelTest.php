@@ -420,6 +420,14 @@ class AbstractModelTest extends TestCase
         $this->assertSame(6, $collection->get(3)->id);
         $this->assertSame(8, $collection->get(4)->id);
         $this->assertNull($collection->get(5)->airplane_altitude);
+
+        // Test if prefixes selected primary keys.
+        $flight = $this->flights
+            ->withStatus()
+            ->search('airplane_altitude', '15014', SearchMode::EQUAL_TO)
+            ->withColumns('id')
+            ->listAll();
+        $this->assertSame(5, $flight->get(0)->id);
     }
 
     /**

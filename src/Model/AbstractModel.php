@@ -458,7 +458,9 @@ abstract class AbstractModel
      */
     public function withColumns(string ...$column_names): static
     {
-        $this->selecting = $column_names;
+        $this->selecting = array_map(function (string $name) {
+            return $name === $this->primaryKey ? $this->prefix($name) : $name;
+        }, $column_names);
         return $this;
     }
 
