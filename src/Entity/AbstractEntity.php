@@ -43,11 +43,29 @@ abstract class AbstractEntity
      */
     public static function createFromArray(array $data): mixed
     {
-        // Create instance.
         $class_name = static::class;
         $entity = new $class_name();
+        $update = static::updateFromArray($entity, $data);
+        $result = new CreationResult();
+        $result->entity = $update->entity;
+        $result->typeErrors = $update->typeErrors;
+        return $result;
+    }
 
-        // Set properties.
+    /**
+     * Update an instance using the entries of an array.
+     * 
+     * @template T of AbstractEntity
+     * @param T $entity
+     * @return CreationResult<T>
+     */
+    public static function updateFromArray(mixed $entity, array $data): mixed
+    {
+        if ($entity::class !== static::class) {
+            $message = 'Cannot update %s using %s::updateFromArray().';
+            $message = sprintf($message, $entity::class, static::class);
+            throw new \InvalidArgumentException($message);
+        }
         $errors = [];
         foreach ($data as $key => $value) {
             try {
@@ -62,12 +80,9 @@ abstract class AbstractEntity
                 $errors[] = $error;
             }
         }
-
-        // Create result object.
-        $result = new CreationResult();
+        $result = new UpdateResult();
         $result->entity = $entity;
         $result->typeErrors = $errors;
-
         return $result;
     }
 

@@ -126,6 +126,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Entity\AbstractEntity::__set
      * @uses Laucov\Modeling\Entity\AbstractEntity::createFromArray
+     * @uses Laucov\Modeling\Entity\AbstractEntity::updateFromArray
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
@@ -360,7 +361,9 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::listAll
      * @uses Laucov\Modeling\Model\AbstractModel::resetPagination
      * @uses Laucov\Modeling\Model\AbstractModel::retrieve
+     * @uses Laucov\Modeling\Model\AbstractModel::search
      * @uses Laucov\Modeling\Model\AbstractModel::sort
+     * @uses Laucov\Modeling\Model\AbstractModel::withColumns
      * @uses Laucov\Modeling\Model\Collection::__construct
      * @uses Laucov\Modeling\Model\Collection::current
      * @uses Laucov\Modeling\Model\Collection::get
