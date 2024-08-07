@@ -33,6 +33,7 @@ namespace Tests\Unit\Model;
 use Laucov\Db\Data\Connection;
 use Laucov\Db\Data\ConnectionFactory;
 use Laucov\Db\Data\Driver\DriverFactory;
+use Laucov\Db\Query\Table;
 use Laucov\Modeling\Model\AbstractModel;
 use Laucov\Modeling\Model\BatchUpdateResult;
 use Laucov\Modeling\Model\Collection;
@@ -137,6 +138,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
+     * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
     public function testCanCreateEntity(): void
@@ -179,6 +181,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
+     * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
     public function testCanDeleteAndErase(): void
@@ -249,9 +252,11 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::createCollection
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
+     * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
+     * @uses Laucov\Modeling\Model\AbstractModel::getPrimaryKey
      * @uses Laucov\Modeling\Model\AbstractModel::list
      * @uses Laucov\Modeling\Model\AbstractModel::listAll
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
@@ -361,8 +366,10 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::createCollection
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
+     * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
+     * @uses Laucov\Modeling\Model\AbstractModel::getPrimaryKey
      * @uses Laucov\Modeling\Model\AbstractModel::list
      * @uses Laucov\Modeling\Model\AbstractModel::listAll
      * @uses Laucov\Modeling\Model\AbstractModel::resetPagination
@@ -462,9 +469,11 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::createCollection
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
+     * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
+     * @uses Laucov\Modeling\Model\AbstractModel::getPrimaryKey
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      * @uses Laucov\Modeling\Model\AbstractModel::retrieve
      * @uses Laucov\Modeling\Model\AbstractModel::retrieveBatch
@@ -571,11 +580,13 @@ class AbstractModelTest extends TestCase
      * @covers ::createTable
      * @covers ::createValidator
      * @covers ::getEntities
+     * @covers ::getPrimaryKey
      * @covers ::list
      * @covers ::listAll
      * @covers ::paginate
      * @covers ::resetPagination
      * @covers ::sort
+     * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      * @uses Laucov\Modeling\Model\Collection::__construct
      * @uses Laucov\Modeling\Model\Collection::count
@@ -676,8 +687,10 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
+     * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
+     * @uses Laucov\Modeling\Model\AbstractModel::getPrimaryKey
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
     public function testCanRetrieve(): void
@@ -734,8 +747,10 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::createCollection
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
+     * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
+     * @uses Laucov\Modeling\Model\AbstractModel::getPrimaryKey
      * @uses Laucov\Modeling\Model\AbstractModel::list
      * @uses Laucov\Modeling\Model\AbstractModel::listAll
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
@@ -778,6 +793,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::createCollection
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
+     * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
     public function testChecksIfInsertedEntitiesAreEmpty(): void
@@ -810,6 +826,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::createCollection
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
+     * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      */
     public function testChecksIfInsertedEntityBatchIsEmpty(): void
@@ -827,6 +844,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
+     * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      * @uses Laucov\Modeling\Model\AbstractModel::search
      */
@@ -840,6 +858,36 @@ class AbstractModelTest extends TestCase
             'Caraja',
             SearchMode::CONTAINS,
         );
+    }
+
+    /**
+     * @covers ::getEntity
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
+     * @uses Laucov\Modeling\Entity\AbstractEntity::__set
+     * @uses Laucov\Modeling\Entity\Relationship::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
+     * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
+     * @uses Laucov\Modeling\Model\AbstractModel::createTable
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
+     * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
+     * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
+     * @uses Laucov\Modeling\Model\AbstractModel::getEntities
+     * @uses Laucov\Modeling\Model\AbstractModel::getPrimaryKey
+     * @uses Laucov\Modeling\Model\AbstractModel::prefix
+     * @uses Laucov\Modeling\Model\AbstractModel::retrieve
+     */
+    public function testFailsIfRetrievesDuplicatedEntries(): void
+    {
+        // Create model with faulty primary key.
+        $model = new class ($this->conns) extends AirplaneModel {
+            protected string $primaryKey = 'model';
+        };
+
+        // Test IDs.
+        $model->retrieve('SR22');
+        $this->expectException(\RuntimeException::class);
+        $model->retrieve('A320-251N');
     }
 
     /**
@@ -868,31 +916,73 @@ class AbstractModelTest extends TestCase
     }
 
     /**
-     * @covers ::getEntity
-     * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
-     * @uses Laucov\Modeling\Entity\AbstractEntity::__set
-     * @uses Laucov\Modeling\Entity\Relationship::__construct
+     * @covers ::formatColumnName
+     * @covers ::search
+     * @covers ::sort
+     * @covers ::withColumns
+     * @covers ::withValue
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
+     * @uses Laucov\Modeling\Model\AbstractModel::createCollection
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
-     * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
+     * @uses Laucov\Modeling\Model\AbstractModel::filterDeleted
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
+     * @uses Laucov\Modeling\Model\AbstractModel::getPrimaryKey
+     * @uses Laucov\Modeling\Model\AbstractModel::list
+     * @uses Laucov\Modeling\Model\AbstractModel::listAll
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
-     * @uses Laucov\Modeling\Model\AbstractModel::retrieve
+     * @uses Laucov\Modeling\Model\AbstractModel::resetPagination
+     * @uses Laucov\Modeling\Model\AbstractModel::searchMultipleColumns
+     * @uses Laucov\Modeling\Model\Collection::__construct
      */
-    public function testFailsIfRetrievesDuplicatedEntries(): void
+    public function testFormatsColumnsAutomatically(): void
     {
-        // Create model with faulty primary key.
-        $model = new class ($this->conns) extends AirplaneModel {
-            protected string $primaryKey = 'model';
-        };
+        $table = $this->createMock(Table::class);
+        $table
+            ->method('or')
+            ->willReturnSelf();
+        $table
+            ->expects($this->exactly(4))
+            ->method('filter')
+            ->withConsecutive(
+                ['registration', '^=', 'PR'],
+                ['airplanes.id', '$=', '1'],
+                ['airplanes.id', '*=', '3'],
+                ['model', '*=', '3'],
+            );
+        $table
+            ->expects($this->exactly(2))
+            ->method('sort')
+            ->withConsecutive(
+                ['registration', false],
+                ['airplanes.id', false],
+            );
+        $table
+            ->expects($this->exactly(3))
+            ->method('pick')
+            ->withConsecutive(
+                ['airplanes.id'],
+                ['registration'],
+                ['airplanes.deleted_at'],
+            );
 
-        // Test IDs.
-        $model->retrieve('SR22');
-        $this->expectException(\RuntimeException::class);
-        $model->retrieve('A320-251N');
+        $factory = $this->createMock(ConnectionFactory::class);
+        $factory
+            ->method('getTable')
+            ->willReturn($table);
+
+        $model = new class ($factory) extends AirplaneModel {};
+        $model
+            ->filterDeleted(DeletionFilter::SHOW)
+            ->search('registration', 'PR', SearchMode::STARTS_WITH)
+            ->search('id', '1', SearchMode::ENDS_WITH)
+            ->search(['id', 'model'], '3', SearchMode::CONTAINS)
+            ->sort('registration')
+            ->sort('id')
+            ->withColumns('id', 'registration', 'deleted_at')
+            ->listAll();
     }
 
     /**
@@ -905,6 +995,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
+     * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
@@ -938,7 +1029,9 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::createCollection
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
+     * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
+     * @uses Laucov\Modeling\Model\AbstractModel::getPrimaryKey
      * @uses Laucov\Modeling\Model\AbstractModel::list
      * @uses Laucov\Modeling\Model\AbstractModel::listAll
      * @uses Laucov\Modeling\Model\AbstractModel::paginate

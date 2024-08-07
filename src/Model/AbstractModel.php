@@ -313,7 +313,7 @@ abstract class AbstractModel implements ReadOnlyModelInterface
      */
     public function retrieve(string $id): mixed
     {
-        $this->table->filter($this->prefix($this->primaryKey), '=', $id);
+        $this->table->filter($this->getPrimaryKey(), '=', $id);
         return $this->getEntity();
     }
 
@@ -359,6 +359,7 @@ abstract class AbstractModel implements ReadOnlyModelInterface
         if (is_array($column_or_columns)) {
             $this->searchMultipleColumns($column_or_columns, $search, $mode);
         } else {
+            $column_or_columns = $this->formatColumnName($column_or_columns);
             $this->table->filter($column_or_columns, $mode->value, $search);
         }
         return $this;
@@ -367,9 +368,9 @@ abstract class AbstractModel implements ReadOnlyModelInterface
     /**
      * Sort the next list/retrieval.
      */
-    public function sort(string $column_name, bool $descending = false): static
+    public function sort(string $column, bool $descending = false): static
     {
-        $this->table->sort($column_name, $descending);
+        $this->table->sort($this->formatColumnName($column), $descending);
         return $this;
     }
 
@@ -460,11 +461,9 @@ abstract class AbstractModel implements ReadOnlyModelInterface
      * 
      * Note: entity properties that depend on unfetched columns won't be set.
      */
-    public function withColumns(string ...$column_names): static
+    public function withColumns(string ...$columns): static
     {
-        $this->selecting = array_map(function (string $name) {
-            return $name === $this->primaryKey ? $this->prefix($name) : $name;
-        }, $column_names);
+        $this->selecting = array_map([$this, 'formatColumnName'], $columns);
         return $this;
     }
 
@@ -492,13 +491,15 @@ abstract class AbstractModel implements ReadOnlyModelInterface
         // Set constraints according to the filter mode.
         switch ($this->deletionFilter) {
             case DeletionFilter::HIDE:
-                $this->table->filter($this->prefix('deleted_at'), '=', null);
+                $column = $this->formatColumnName('deleted_at');
+                $this->table->filter($column, '=', null);
                 break;
             case DeletionFilter::SHOW:
                 // Do nothing.
                 break;
             case DeletionFilter::SHOW_EXCLUSIVELY:
-                $this->table->filter($this->prefix('deleted_at'), '!=', null);
+                $column = $this->formatColumnName('deleted_at');
+                $this->table->filter($column, '!=', null);
                 break;
         }
 
@@ -521,10 +522,8 @@ abstract class AbstractModel implements ReadOnlyModelInterface
                 $relationship = reset($attributes)->newInstance();
                 $table = $relationship->tableName;
                 $this->entityRelationshipKeys[$table][] = $key;
-            } elseif ($key === $this->primaryKey) {
-                $this->entityKeys[] = $this->prefix($key);
             } else {
-                $this->entityKeys[] = $key;
+                $this->entityKeys[] = $this->formatColumnName($key);
             }
         }
     }
@@ -638,6 +637,17 @@ abstract class AbstractModel implements ReadOnlyModelInterface
     }
 
     /**
+     * Format a column name automatically.
+     */
+    public function formatColumnName(string $name): string
+    {
+        return match ($name) {
+            $this->primaryKey, 'deleted_at' => $this->prefix($name),
+            default => $name,
+        };
+    }
+
+    /**
      * Get the next SELECT query default keys.
      * 
      * @return array<string>
@@ -712,6 +722,14 @@ abstract class AbstractModel implements ReadOnlyModelInterface
     }
 
     /**
+     * Get the prefixed primary key.
+     */
+    protected function getPrimaryKey(): string
+    {
+        return $this->prefix($this->primaryKey);
+    }
+
+    /**
      * Get all filtered records as a `Collection`.
      * 
      * @return Collection<T>
@@ -722,9 +740,8 @@ abstract class AbstractModel implements ReadOnlyModelInterface
         $this->applyDeletionFilter();
 
         // Count all filtered records.
-        $primary_key = $this->prefix($this->primaryKey);
         $this->table->autoReset = false;
-        $filtered = $this->table->countRecords($primary_key);
+        $filtered = $this->table->countRecords($this->getPrimaryKey());
         $this->table->autoReset = true;
 
         // Paginate.
@@ -836,6 +853,7 @@ abstract class AbstractModel implements ReadOnlyModelInterface
         }
         $this->table->openGroup();
         foreach ($columns as $column) {
+            $column = $this->formatColumnName($column);
             $this->table
                 ->or()
                 ->filter($column, $mode->value, $search);
