@@ -28,12 +28,12 @@
 
 namespace Laucov\Modeling\Model;
 
-use Laucov\Db\Data\Connection;
 use Laucov\Db\Data\ConnectionFactory;
 use Laucov\Db\Query\Table;
 use Laucov\Modeling\Entity\AbstractEntity;
 use Laucov\Modeling\Entity\ObjectReader;
 use Laucov\Modeling\Entity\Relationship;
+use Laucov\Modeling\Model\Interfaces\ReadOnlyModelInterface;
 use Laucov\Modeling\Validation\EntityValidator;
 
 /**
@@ -41,7 +41,7 @@ use Laucov\Modeling\Validation\EntityValidator;
  * 
  * @template T of AbstractEntity
  */
-abstract class AbstractModel
+abstract class AbstractModel implements ReadOnlyModelInterface
 {
     /**
      * Whether to reset the deletion filter upon the next query.

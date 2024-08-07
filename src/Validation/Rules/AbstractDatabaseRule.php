@@ -29,7 +29,7 @@
 namespace Laucov\Modeling\Validation\Rules;
 
 use Laucov\Db\Data\ConnectionFactory;
-use Laucov\Modeling\Model\AbstractModel;
+use Laucov\Modeling\Model\Interfaces\ReadOnlyModelInterface;
 use Laucov\Validation\AbstractRule;
 
 /**
@@ -55,11 +55,11 @@ abstract class AbstractDatabaseRule extends AbstractRule
     /**
      * Create a model instance.
      * 
-     * @template T of AbstractModel
+     * @template T of ReadOnlyModelInterface
      * @param class-string<T>
      * @return T
      */
-    protected function createModel(string $class_name): mixed
+    protected function createModel(string $class_name): ReadOnlyModelInterface
     {
         return new $class_name($this->connections);
     }
