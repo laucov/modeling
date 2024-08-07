@@ -116,7 +116,13 @@ class AbstractModelTest extends TestCase
                     ['registration', 'P', SearchMode::STARTS_WITH],
                     ['model', 'A320-251N', SearchMode::EQUAL_TO],
                 ],
-            ]
+            ],
+            [
+                [1, 5, 7, 10, 11],
+                [
+                    [['registration', 'model'], 'M', SearchMode::CONTAINS],
+                ]
+            ],
         ];
     }
 
@@ -720,6 +726,7 @@ class AbstractModelTest extends TestCase
 
     /**
      * @covers ::search
+     * @covers ::searchMultipleColumns
      * @uses Laucov\Modeling\Entity\AbstractEntity::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
@@ -812,6 +819,27 @@ class AbstractModelTest extends TestCase
         $message = 'Cannot insert empty records to the database.';
         $this->expectExceptionMessage($message);
         $this->airplanes->insertBatch(new Airplane(), new Airplane());
+    }
+
+    /**
+     * @covers ::searchMultipleColumns
+     * @uses Laucov\Modeling\Model\AbstractModel::__construct
+     * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
+     * @uses Laucov\Modeling\Model\AbstractModel::createTable
+     * @uses Laucov\Modeling\Model\AbstractModel::createValidator
+     * @uses Laucov\Modeling\Model\AbstractModel::prefix
+     * @uses Laucov\Modeling\Model\AbstractModel::search
+     */
+    public function testChecksIfSearchColumnsAreStrings(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $message = 'Column names must be strings.';
+        $this->expectExceptionMessage($message);
+        $this->airplanes->search(
+            ['model', new \stdClass()],
+            'Caraja',
+            SearchMode::CONTAINS,
+        );
     }
 
     /**

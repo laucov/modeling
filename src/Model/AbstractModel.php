@@ -352,11 +352,15 @@ abstract class AbstractModel
      * Filter the next list/retrieval searching a specific column.
      */
     public function search(
-        string $column_name,
+        string|array $column_or_columns,
         string $search,
         SearchMode $mode,
     ): static {
-        $this->table->filter($column_name, $mode->value, $search);
+        if (is_array($column_or_columns)) {
+            $this->searchMultipleColumns($column_or_columns, $search, $mode);
+        } else {
+            $this->table->filter($column_or_columns, $mode->value, $search);
+        }
         return $this;
     }
 
@@ -814,5 +818,28 @@ abstract class AbstractModel
     {
         $this->pageLength = null;
         $this->pageNumber = 1;
+    }
+
+    /**
+     * Perform a search to multiple columns.
+     */
+    protected function searchMultipleColumns(
+        array $columns,
+        string $search,
+        SearchMode $mode,
+    ): void {
+        foreach ($columns as $column) {
+            if (!is_string($column)) {
+                $message = 'Column names must be strings.';
+                throw new \InvalidArgumentException($message);
+            }
+        }
+        $this->table->openGroup();
+        foreach ($columns as $column) {
+            $this->table
+                ->or()
+                ->filter($column, $mode->value, $search);
+        }
+        $this->table->closeGroup();
     }
 }
