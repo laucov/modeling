@@ -33,6 +33,7 @@ namespace Tests\Unit\Model;
 use Laucov\Modeling\Entity\AbstractEntity;
 use Laucov\Modeling\Entity\Relationship;
 use Laucov\Modeling\Model\Collection;
+use Laucov\Modeling\Validation\Rules\Exists;
 
 /**
  * Test entity that represents a flight.
@@ -47,6 +48,7 @@ class Flight extends AbstractEntity
     /**
      * Airplane ID.
      */
+    #[Exists(AirplaneModel::class, 'id')]
     public int $airplane_id;
 
     /**

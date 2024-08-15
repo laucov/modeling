@@ -140,6 +140,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
+     * @uses Laucov\Modeling\Validation\EntityValidator::setConnectionFactory
      */
     public function testCanCreateEntity(): void
     {
@@ -183,6 +184,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
+     * @uses Laucov\Modeling\Validation\EntityValidator::setConnectionFactory
      */
     public function testCanDeleteAndErase(): void
     {
@@ -271,6 +273,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\Collection::next
      * @uses Laucov\Modeling\Model\Collection::rewind
      * @uses Laucov\Modeling\Model\Collection::valid
+     * @uses Laucov\Modeling\Validation\EntityValidator::setConnectionFactory
      */
     public function testCanFetchOneToManyRelationships(): void
     {
@@ -383,6 +386,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\Collection::next
      * @uses Laucov\Modeling\Model\Collection::rewind
      * @uses Laucov\Modeling\Model\Collection::valid
+     * @uses Laucov\Modeling\Validation\EntityValidator::setConnectionFactory
      */
     public function testCanFetchOneToOneRelationships(): void
     {
@@ -467,6 +471,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::applyDeletionFilter
      * @uses Laucov\Modeling\Model\AbstractModel::cacheEntityKeys
      * @uses Laucov\Modeling\Model\AbstractModel::createCollection
+     * @uses Laucov\Modeling\Model\AbstractModel::createEntity
      * @uses Laucov\Modeling\Model\AbstractModel::createTable
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
@@ -474,9 +479,15 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::getEntity
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::getPrimaryKey
+     * @uses Laucov\Modeling\Model\AbstractModel::list
+     * @uses Laucov\Modeling\Model\AbstractModel::listAll
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
+     * @uses Laucov\Modeling\Model\AbstractModel::resetPagination
      * @uses Laucov\Modeling\Model\AbstractModel::retrieve
      * @uses Laucov\Modeling\Model\AbstractModel::retrieveBatch
+     * @uses Laucov\Modeling\Model\AbstractModel::withColumns
+     * @uses Laucov\Modeling\Model\Collection::__construct
+     * @uses Laucov\Modeling\Model\Collection::getColumn
      * @uses Laucov\Modeling\Validation\EntityValidator::createRuleset
      * @uses Laucov\Modeling\Validation\EntityValidator::extractProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::extractPropertyNames
@@ -484,8 +495,14 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Validation\EntityValidator::getProperties
      * @uses Laucov\Modeling\Validation\EntityValidator::getPropertyNames
      * @uses Laucov\Modeling\Validation\EntityValidator::getRuleset
+     * @uses Laucov\Modeling\Validation\EntityValidator::setConnectionFactory
      * @uses Laucov\Modeling\Validation\EntityValidator::setEntity
      * @uses Laucov\Modeling\Validation\EntityValidator::validate
+     * @uses Laucov\Modeling\Validation\Rules\AbstractDatabaseRule::createModel
+     * @uses Laucov\Modeling\Validation\Rules\AbstractDatabaseRule::setConnectionFactory
+     * @uses Laucov\Modeling\Validation\Rules\Exists::__construct
+     * @uses Laucov\Modeling\Validation\Rules\Exists::getInfo
+     * @uses Laucov\Modeling\Validation\Rules\Exists::validate
      * @uses Laucov\Validation\Rules\Regex::__construct
      * @uses Laucov\Validation\Rules\Regex::validate
      * @uses Laucov\Validation\Ruleset::addRule
@@ -570,6 +587,15 @@ class AbstractModelTest extends TestCase
             ->withValue('model', 'A320-271N')
             ->updateBatch('3', '12', '56');
         $this->assertSame(BatchUpdateResult::NOT_FOUND, $update);
+
+        // Validate with DB rule.
+        $flight = $this->flights->createEntity();
+        $flight->airplane_id = 32;
+        $flight->origin = null;
+        $flight->destination = null;
+        $this->assertFalse($this->flights->insert($flight));
+        $flight->airplane_id = 8;
+        $this->assertTrue($this->flights->insert($flight));
     }
 
     /**
@@ -599,6 +625,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Entity\AbstractEntity::__set
      * @uses Laucov\Modeling\Entity\Relationship::__construct
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
+     * @uses Laucov\Modeling\Validation\EntityValidator::setConnectionFactory
      */
     public function testCanList(): void
     {
@@ -692,6 +719,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::getPrimaryKey
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
+     * @uses Laucov\Modeling\Validation\EntityValidator::setConnectionFactory
      */
     public function testCanRetrieve(): void
     {
@@ -758,6 +786,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\Collection::__construct
      * @uses Laucov\Modeling\Model\Collection::get
      * @uses Laucov\Modeling\Model\Collection::has
+     * @uses Laucov\Modeling\Validation\EntityValidator::setConnectionFactory
      * @dataProvider searchProvider
      */
     public function testCanSearch(array $expected_ids, array $search): void
@@ -795,6 +824,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
+     * @uses Laucov\Modeling\Validation\EntityValidator::setConnectionFactory
      */
     public function testChecksIfInsertedEntitiesAreEmpty(): void
     {
@@ -828,6 +858,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::createValidator
      * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
+     * @uses Laucov\Modeling\Validation\EntityValidator::setConnectionFactory
      */
     public function testChecksIfInsertedEntityBatchIsEmpty(): void
     {
@@ -847,6 +878,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::formatColumnName
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      * @uses Laucov\Modeling\Model\AbstractModel::search
+     * @uses Laucov\Modeling\Validation\EntityValidator::setConnectionFactory
      */
     public function testChecksIfSearchColumnsAreStrings(): void
     {
@@ -876,6 +908,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::getPrimaryKey
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
      * @uses Laucov\Modeling\Model\AbstractModel::retrieve
+     * @uses Laucov\Modeling\Validation\EntityValidator::setConnectionFactory
      */
     public function testFailsIfRetrievesDuplicatedEntries(): void
     {
@@ -936,6 +969,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::resetPagination
      * @uses Laucov\Modeling\Model\AbstractModel::searchMultipleColumns
      * @uses Laucov\Modeling\Model\Collection::__construct
+     * @uses Laucov\Modeling\Validation\EntityValidator::setConnectionFactory
      */
     public function testFormatsColumnsAutomatically(): void
     {
@@ -999,6 +1033,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::getDefaultColumns
      * @uses Laucov\Modeling\Model\AbstractModel::getEntities
      * @uses Laucov\Modeling\Model\AbstractModel::prefix
+     * @uses Laucov\Modeling\Validation\EntityValidator::setConnectionFactory
      * @dataProvider duplicatedAirplaneModelRetrievalProvider
      */
     public function testFailsIfRetrievesBatchesWithDuplicatedEntries(
@@ -1040,6 +1075,7 @@ class AbstractModelTest extends TestCase
      * @uses Laucov\Modeling\Model\AbstractModel::retrieve
      * @uses Laucov\Modeling\Model\Collection::__construct
      * @uses Laucov\Modeling\Model\Collection::get
+     * @uses Laucov\Modeling\Validation\EntityValidator::setConnectionFactory
      */
     public function testSelectsColumns(): void
     {

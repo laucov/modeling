@@ -579,7 +579,9 @@ abstract class AbstractModel implements ReadOnlyModelInterface
      */
     protected function createValidator(): EntityValidator
     {
-        return new EntityValidator();
+        $validator = new EntityValidator();
+        $validator->setConnectionFactory($this->connections);
+        return $validator;
     }
 
     /**
